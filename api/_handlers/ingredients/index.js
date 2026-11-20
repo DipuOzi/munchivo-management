@@ -81,6 +81,13 @@ export default async function handler(req, res) {
     const minStock = toBase(body.minStock || 0, displayUnit)
     const lowStock = toBase(body.lowStockThreshold || 0, displayUnit)
 
+    // Check if supplier exists (if provided) to give a clear error instead of 500
+    let supplierExists = true
+    if (body.supplierId) {
+      const sup = await db.select({ id: schema.suppliers.id }).from(schema.suppliers).where(eq(schema.suppliers.id, body.supplierId)).limit(1)
+      supplierExists = sup.length > 0
+    }
+
     const created = await db.transaction(async (tx) => {
       const [ingredient] = await tx
         .insert(schema.ingredients)
@@ -120,6 +127,10 @@ export default async function handler(req, res) {
       }
       return ingredient
     })
+
+    if (!supplierExists) {
+      return sendJson(res, 400, { error: 'Selected supplier does not exist.' })
+    }
 
     await db.insert(schema.auditLogs).values({
       userId: user.id,
