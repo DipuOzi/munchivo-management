@@ -1,0 +1,64 @@
+/* ============================================================
+   MUNCHIVO MANAGEMENT — DESIGN TOKENS
+   Brand values extracted directly from munchivo.vercel.app.
+   Do not change these without changing the brand.
+   ============================================================ */
+
+:root {
+  /* --- Official Munchivo brand palette --- */
+  --dark: #092328;            /* deep teal-black: text, dark surfaces */
+  --dark-soft: #0e2e35;       /* secondary dark */
+  --cream: #f3efe6;           /* page background */
+  --cream-deep: #dfd9cc;      /* deeper cream contrast */
+  --orange: #ffc300;          /* golden yellow accent */
+  --orange-deep: #db1a1a;     /* Munchivo red: primary accent */
+  --line: #c6c1b5;            /* borders */
+  --muted: #6a655c;           /* secondary text */
+  --light-muted: #aba79c;     /* tertiary text */
+
+  /* --- Management surfaces (derived from brand) --- */
+  --surface: #fffdf9;         /* card background */
+  --surface-alt: #fbf8f0;     /* input / inset background */
+  --white: #ffffff;
+
+  /* --- Status colours --- */
+  --success: #14532d;
+  --success-bg: #e3f2e6;
+  --warning: #8a5a00;
+  --warning-bg: #fdf0d3;
+  --danger: #9f1c1c;
+  --danger-bg: #fbe4e4;
+  --info-bg: #e8eef0;
+
+  /* --- Typography --- */
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-accent: 'Instrument Serif', serif;
+
+  /* --- Radii --- */
+  --radius-pill: 100px;
+  --radius-card: 24px;
+  --radius-card-sm: 16px;
+  --radius-input: 14px;
+
+  /* --- Shadows --- */
+  --shadow-card: 0 24px 44px -34px rgba(9, 35, 40, 0.4);
+  --shadow-soft: 0 20px 34px -28px rgba(9, 35, 40, 0.45);
+  --shadow-input: 0 14px 26px -20px rgba(46, 8, 10, 0.55);
+
+  /* --- Layout --- */
+  --sidebar-width: 264px;
+  --header-height: 72px;
+  --page-gutter: clamp(20px, 3vw, 40px);
+
+  /* --- Spacing scale --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+}

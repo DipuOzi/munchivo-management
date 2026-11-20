@@ -1,0 +1,135 @@
+/* ============================================================
+   LOGIN — Munchivo Management entry screen
+   ============================================================ */
+
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-5);
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle brand colour glow, matching the site's warm atmosphere */
+.login::before,
+.login::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.login::before {
+  width: 480px;
+  height: 480px;
+  background: var(--orange);
+  top: -180px;
+  right: -140px;
+}
+
+.login::after {
+  width: 420px;
+  height: 420px;
+  background: var(--orange-deep);
+  bottom: -180px;
+  left: -140px;
+}
+
+.login__card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: clamp(28px, 5vw, 44px);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.login__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.login__logo {
+  width: 76px;
+  height: 76px;
+}
+
+.login__brand h1 {
+  font-size: 24px;
+}
+
+.login__brand h1 em {
+  color: var(--orange-deep);
+}
+
+.login__tagline {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin-top: -6px;
+}
+
+.login__subtitle {
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--light-muted);
+}
+
+.login__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.login__password {
+  position: relative;
+}
+
+.login__toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.login__toggle:hover {
+  color: var(--dark);
+  background: rgba(9, 35, 40, 0.06);
+}
+
+.login__submit {
+  margin-top: 6px;
+  width: 100%;
+  min-height: 54px;
+}
+
+.login__footnote {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--light-muted);
+}
