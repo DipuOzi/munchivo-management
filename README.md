@@ -1,260 +1,151 @@
 # Munchivo Management
 
-A complete back-office system for the Munchivo food business: inventory,
-purchasing, recipes, production, sales, waste, expiry tracking, operating
-expenses, partner ledgers, financial reports and settings — all in one
-web app.
-
-Built with **React 19 + Vite** on the front end and **Vercel serverless
-functions + Neon PostgreSQL (Drizzle ORM)** on the back end. Money is stored
-as integer poisha (1 BDT = 100 poisha) and quantities as integer base units,
-so totals are always exact.
+An end-to-end inventory and production management system for the Munchivo kitchen. Built as a single-page Vite + React app with a single Vercel serverless function forwarding to a Neon PostgreSQL database.
 
 ---
 
-## Features
+## What this project does
 
-| Module | What it does |
-| --- | --- |
-| Dashboard | Today's sales, month net profit, low stock, expiring batches, top products, recent orders |
-| Inventory | Ingredients, stock levels, weighted-average cost, manual adjustments, movement history |
-| Purchases | Supplier purchases, line items, partial payments, automatic stock batches |
-| Suppliers | Contact details and outstanding dues |
-| Recipes | Ingredients + quantities per product, live plate cost |
-| Calculator | Ingredient cost and portion calculator |
-| Products | Menu items, categories, selling prices |
-| Production | Batch production with stock consumption and prepared-stock output |
-| Sales | Orders, discounts, payment methods, refunds, automatic stock + COGS |
-| Waste | Waste records with reason and estimated cost |
-| Expiry | Ingredient batch expiry and prepared-stock ageing |
-| **Expenses** | Operating costs by category, paid/unpaid tracking, month filters, summary cards |
-| **Partners** | Ownership %, capital, drawings, profit share, loans and repayments with a full ledger |
-| **Reports** | Profit & loss, daily revenue/expense trend, payment mix, top products, expense breakdown, partner balances, CSV export and print |
-| Settings | Profile, business details, expiry alert window, password change, team accounts |
-| Notifications | Low-stock and expiry alerts, per-user read state, browser push |
-
-Security: HTTP-only cookie sessions with hashed tokens, bcrypt password
-hashing, login rate limiting, audit logs for every write, and soft-cancel
-instead of deleting financial history.
+- **Inventory** — ingredients with per-base-unit stock and weighted-average cost. Every stock change is an immutable `inventory_movements` row.
+- **Purchases** — supplier purchases with per-item costing, stock accrual, batch tracking, and supplier dues.
+- **Recipes** — recipe definitions with per-item ingredient quantities; recipe costing estimates.
+- **Products** — finished menu items, some tied to a recipe for batch costing.
+- **Production** — confirm a recipe batch → deduct scaled ingredients → create prepared stock (batch workflow).
+- **Sales** — consume ingredient or prepared stock at sale time, capture COGS snapshot.
+- **Waste / Expiry** — record spoiled/expired stock; each record deducts stock with an immutable movement. Cancellation returns stock.
+- **Reports** — daily + category breakdowns of revenue, cost, and net profit.
+- **Dashboard** — monthly summary metrics.
+- **Partners** — capital contributions and withdrawals ledger.
+- **Expenses** — operating expenses with categories, search, and summary.
+- **Settings** — team + business config (expiry alert days, business name, etc.).
+- **Auth** — server-side sessions (HTTP-only cookie), with login page.
+- **Push notifications** — web push (VAPID) when configured.
 
 ---
 
-## Requirements
+## Stack
 
-- Node.js 20 or newer
-- A PostgreSQL database (this project is configured for
-  [Neon](https://neon.tech), but any PostgreSQL 14+ instance works)
-- A free [Vercel](https://vercel.com) account for deployment
+- **Frontend**: Vite + React (ESM, no bundler step for API).
+- **API**: One Vercel serverless function (`api/index.js`) that routes to handlers in `api/_handlers/`. Local dev uses `server/local-dev.mjs`.
+- **Database**: Neon PostgreSQL via Drizzle ORM.
+- **Money**: all amounts are integers in **poisha** (1 BDT = 100 poisha). No floats in money columns.
+- **Quantities**: all `_base` columns are integers in the ingredient's base unit (grams for mass, millilitres for volume, whole units for count/other).
 
 ---
 
-## 1. Install
+## Getting started (local)
 
-```bash
+### 1. Install dependencies
+
+```
 npm install
 ```
 
-## 2. Configure the database
+### 2. Configure environment
 
-1. Create a Neon project and copy its pooled connection string.
-2. Copy the example environment file:
+Copy `.env.local` (or `.env`) and set:
 
-   ```bash
-   copy .env.example .env.local        # Windows
-   cp .env.example .env.local          # macOS / Linux
-   ```
-
-3. Open `.env.local` and set at least `DATABASE_URL`.
-4. Optional but recommended — generate Web Push keys:
-
-   ```bash
-   npx web-push generate-vapid-keys
-   ```
-
-   Paste the public/private keys into `VAPID_PUBLIC_KEY` and
-   `VAPID_PRIVATE_KEY`.
-
-## 3. Create the schema and seed data
-
-```bash
-npm run db:migrate     # applies all Drizzle migrations
-npm run db:seed        # adds the 10 standard expense categories
+```
+DATABASE_URL=postgresql://...
+SESSION_SECRET=...
+CRON_SECRET=...
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:you@example.com
 ```
 
-## 4. Create the partner accounts
+See `.env.example` for the list of required variables.
 
-```bash
-npm run setup:partners
+### 3. Start the API server (for local dev + smoke test)
+
+```
+npm run api:dev
 ```
 
-This prompts in your own terminal for names, emails and passwords (three
-accounts). Passwords are stored only as bcrypt hashes.
+The API listens on `http://localhost:3001`. The Vite dev server proxies `/api/*` to it.
 
-## 5. Run locally
+### 4. Start the frontend
 
-The app needs two servers: the Vite front end and the local API shim.
-
-```bash
-npm run dev:all
+```
+npm run dev
 ```
 
-Then open **http://localhost:5173**.
+### 5. Run the smoke test
 
-`dev:all` starts both. If you prefer separate terminals:
-
-```bash
-npm run api:dev   # API on http://localhost:3001
-npm run dev       # Vite on http://localhost:5173, proxies /api
+```
+npm run api:dev     # in one terminal
+npm run smoke       # in another
 ```
 
-### Verify the API
+`npm run smoke` creates a temporary session for the first active user, exercises every module (expenses, partners, reports, settings, waste, products, ingredients), cleans up all test data, and leaves business settings as they were. It reports per-check pass/fail.
 
-With `api:dev` running:
-
-```bash
-npm run smoke
-```
-
-The smoke test creates a temporary session, exercises every module
-(expenses, partners, reports, settings), then removes all test data and
-restores business settings exactly as they were.
+Current smoke checks: **25 total**, all passing.
 
 ---
 
-## Production deployment on Vercel
+## Key conventions
 
-1. Push the repository to GitHub (see below).
-2. In Vercel, **Add New → Project** and import the repository.
-3. Vercel auto-detects Vite. Keep:
-   - **Build command:** `npm run build`
-   - **Output directory:** `dist`
-4. Add the environment variables from `.env.local` under
-   **Settings → Environment Variables**:
-   - `DATABASE_URL` (Neon pooled connection string)
-   - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (optional, for push)
-   - `CRON_SECRET` (recommended; protects the daily alert job)
-5. Deploy. The included `vercel.json` handles:
-   - SPA routing (every non-API path serves `index.html`)
-   - a daily cron at **01:00 UTC** calling `/api/cron/daily`
-6. After the first deployment, run migrations against the production
-   database from your machine (the same `DATABASE_URL`):
-
-   ```bash
-   npm run db:migrate
-   npm run db:seed
-   ```
-
-   `npm run setup:partners` can also be run locally to create production
-   accounts in that database.
-
-### How the API works on Vercel
-
-Vercel's free (Hobby) plan allows at most **12 serverless functions per
-deployment**, and every file in `api/` would otherwise become its own
-function. Munchivo therefore ships the whole API as a single function:
-
-- `api/index.js` is the only file Vercel turns into a function.
-- `vercel.json` rewrites `/api/<path>` to `/api?__route=<path>`.
-- `api/_lib/router.js` maps that path onto the right handler in
-  `api/_handlers/` (dynamic segments such as `:id` included).
-- Folders starting with `_` (`_lib/`, `_handlers/`) are ignored by Vercel,
-  so they add no functions.
-
-Locally, `server/local-dev.mjs` runs the very same router, so development
-and production routing cannot drift apart. Adding an endpoint means adding
-a handler file and one line to the route table in `api/_lib/router.js`.
-
-### Daily alerts
-
-`vercel.json` registers a daily cron for `/api/cron/daily`. It:
-
-- Creates expiry alerts for batches inside the configured window
-- Resolves alerts for stock that was used or removed
-- Flags prepared stock older than 48 hours
-- Rechecks low stock and auto-resolves replenished ingredients
-- Cleans up expired sessions
-- Sends one browser push when new alerts appear
-
-If `CRON_SECRET` is set, Vercel sends it automatically as a Bearer token.
-Without it the endpoint is open, which is fine locally but not recommended
-for production.
+- **Money**: `poishaToTaka(poisha)` → e.g. `"45.00"`; `takaToPoisha("45.00")` → `4500`. Format for display with `formatMoney(poisha)` → e.g. `"৳45"`.
+- **Quantities**: `toBase(qty, displayUnit)` → base unit integer; `fromBase(base, displayUnit)` → display quantity; `formatQty(base, displayUnit)` → e.g. `"10 kg"`.
+- **Stock changes**: always go through `api/_lib/stock.js` (`deductStock`, `consumePreparedStock`). Every change writes an immutable `inventory_movements` row inside the same transaction.
+- **No hard deletes**: historical records use status flags (`confirmed` / `cancelled`) or reversal records.
+- **Waste**: recording ingredient waste deducts stock + creates an `inventory_movements` row with `movementType = 'waste'`. Prepared-product waste consumes prepared stock only. Cancellation of waste returns stock via `waste_reversal` movement.
+- **Production**: confirming a batch deducts scaled ingredients (via `deductStock`) and creates a `preparedStock` row. `preparedStock` is consumed by batch-workflow sales.
 
 ---
 
-## Pushing to GitHub
-
-```bash
-git init
-git add .
-git commit -m "Complete Munchivo Management"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPO.git
-git push -u origin main
-```
-
-`.env.local`, `node_modules` and `dist` are already ignored. Never commit
-real credentials.
-
----
-
-## Project structure
+## Building for production
 
 ```
-api/                 the API (one Vercel function)
-  index.js           single serverless function entry point
-  _lib/              router + shared helpers: auth, sessions, HTTP, stock, settings
-  _handlers/         one module per route group
-    expenses/        expenses CRUD
-    partners/        partner CRUD + ledger
-    settings/        profile, business, password
-    reports.js       consolidated financial report
-    cron/daily.js    scheduled maintenance + alerting
-drizzle/             SQL migrations generated by drizzle-kit
-scripts/             setup, seed, smoke-test and dev orchestration
-server/local-dev.mjs local API server (development only)
-src/
-  components/        layout, UI primitives, notifications
-  context/           auth context
-  db/                Drizzle client and schema
-  lib/               fetch helper
-  pages/             all screens
-  shared/            money/quantity/date helpers
-  styles/            design tokens and component styles
-public/              static assets, service worker, icons
-vercel.json          SPA rewrite + daily cron
+npm run build
 ```
 
----
-
-## Useful commands
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev:all` | Run API + front end together |
-| `npm run dev` | Vite only (needs `api:dev` separately) |
-| `npm run api:dev` | Local API server on port 3001 |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Preview the production build |
-| `npm run db:generate` | Generate a migration after schema changes |
-| `npm run db:migrate` | Apply migrations |
-| `npm run db:seed` | Seed standard expense categories (idempotent) |
-| `npm run setup:partners` | Create the partner login accounts |
-| `npm run smoke` | End-to-end API smoke test (cleans up after itself) |
+Produces `dist/index.html` + `dist/assets/*.js` + `dist/assets/*.css`. The Vercel function serves `dist/index.html` for non-API routes (SPA fallback).
 
 ---
 
-## Notes and conventions
+## Deployment (Vercel)
 
-- **Never hard-delete financial records.** Expenses and ledger entries are
-  cancelled (`status = 'cancelled'`) so reports and history stay intact.
-- **Money** is `*_poisha` integers; the UI converts to taka with
-  `formatMoney` / `poishaToTaka`.
-- **Quantities** are base units (grams / millilitres / units); use the
-  helpers in `src/shared/units.js`.
-- **Ownership** is stored in basis points (100% = 10000) so percentages such
-  as 33.33% stay exact.
-- Ingredient purchases belong in **Purchases** (they create stock).
-  **Expenses** is for rent, utilities, salaries and other running costs, so
-  COGS is never double-counted.
-- The Reports page uses confirmed sales, confirmed expenses, confirmed waste
-  and confirmed purchases only.
+- The API is a **single Vercel function** (`api/index.js`) that dispatches to handlers in `api/_handlers/`. This keeps the project within Vercel Hobby's 12-function limit.
+- `vercel.json` rewrites `/api/(.*)` → `/api?__route=$1` and sets a SPA fallback for everything else.
+- Cron jobs (`/api/cron/daily`) are declared in `vercel.json` and protected by `CRON_SECRET`.
+
+### Environment variables (Vercel project settings → Environment Variables)
+
+- `DATABASE_URL` — PostgreSQL connection string (Neon).
+- `SESSION_SECRET` — random string for session signing.
+- `CRON_SECRET` — shared secret for cron auth.
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — for web push (optional).
+
+---
+
+## Repository
+
+- **GitHub**: https://github.com/DipuOzi/munchivo-management
+- **Branch**: `main`
+- **Push**: committed and pushed via HTTPS (credentials stored in Git credential helper).
+
+---
+
+## Error handling
+
+Handlers return structured JSON errors:
+
+- `400` for validation errors (specific message).
+- `401` for missing/invalid auth.
+- `404` for not-found resources.
+- `409` for uniqueness conflicts (e.g. duplicate ingredient/product name).
+- `405` for unsupported methods.
+- `500` for unexpected server errors, with the real error message exposed (after logging).
+
+The `api/_lib/router.js` dispatches based on method + path patterns and handles the single-function routing for Vercel.
+
+---
+
+## Notes
+
+- `api/_handlers/` is the directory where individual route handlers live. `api/index.js` is the only file Vercel deploys as a function; it imports the shared router.
+- `api/_lib/` contains shared utilities: router, HTTP helpers, auth guard, stock engine, cost helpers.
+- `src/db/schema.js` is the single source of truth for the database schema (Drizzle ORM). All handlers import from it.
+- `src/shared/units.js` contains shared unit/money helpers used by both API handlers and the frontend.
+- The sidebar excludes the **Suppliers** tab (removed to simplify navigation). Supplier management still works via the Partners section where supplier relationships are recorded.
