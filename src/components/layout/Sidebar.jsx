@@ -10,9 +10,8 @@ const NAV_SECTIONS = [
   {
     label: 'Operations',
     items: [
-      { to: '/inventory', label: 'Inventory', icon: 'box' },
-      { to: '/purchases', label: 'Purchases', icon: 'cart' },
-      { to: '/suppliers', label: 'Suppliers', icon: 'truck' },
+      { to: '/inventory', label: 'Inventory', icon: 'box' },  {
+      to: '/purchases', label: 'Purchases', icon: 'cart' },
       { to: '/recipes', label: 'Recipes', icon: 'book' },
       { to: '/calculator', label: 'Calculator', icon: 'calc' },
       { to: '/products', label: 'Products', icon: 'tag' },

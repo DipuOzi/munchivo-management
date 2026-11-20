@@ -70,57 +70,59 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: 'This recipe has no ingredients.' })
     }
 
-    const batch = await db.transaction(async (tx) => {
-      let totalCost = 0
-      for (const item of items) {
-        const need = Math.round(item.quantityBase * factor)
-        if (need <= 0) continue
-        const cogs = await deductStock(tx, {
-          ingredientId: item.ingredientId,
-          quantityBase: need,
-          movementType: MOVEMENT_TYPES.PRODUCTION_CONSUMPTION,
-          userId: user.id,
-          notes: `Production batch (${recipe.name} ×${factor.toFixed(3)})`,
-        })
-        totalCost += cogs
-      }
+    try {
+      const batch = await db.transaction(async (tx) => {
+        let totalCost = 0
+        for (const item of items) {
+          const need = Math.round(item.quantityBase * factor)
+          if (need <= 0) continue
+          const cogs = await deductStock(tx, {
+            ingredientId: item.ingredientId,
+            quantityBase: need,
+            movementType: MOVEMENT_TYPES.PRODUCTION_CONSUMPTION,
+            userId: user.id,
+            notes: `Production batch (${recipe.name} ×${factor.toFixed(3)})`,
+          })
+          totalCost += cogs
+        }
 
-      const [batch] = await tx
-        .insert(schema.productionBatches)
-        .values({
-          recipeId,
+        const [batch] = await tx
+          .insert(schema.productionBatches)
+          .values({
+            recipeId,
+            productId: productId || null,
+            targetYieldBase,
+            ingredientCostPoisha: totalCost,
+            notes: notes?.trim() || null,
+            createdBy: user.id,
+          })
+          .returning()
+
+        await tx.insert(schema.preparedStock).values({
+          batchId: batch.id,
           productId: productId || null,
-          targetYieldBase,
-          ingredientCostPoisha: totalCost,
-          notes: notes?.trim() || null,
-          createdBy: user.id,
+          recipeId,
+          quantityOriginalBase: targetYieldBase,
+          quantityRemainingBase: targetYieldBase,
+          unitCostPoisha: Math.round(totalCost / targetYieldBase),
         })
-        .returning()
 
-      await tx.insert(schema.preparedStock).values({
-        batchId: batch.id,
-        productId: productId || null,
-        recipeId,
-        quantityOriginalBase: targetYieldBase,
-        quantityRemainingBase: targetYieldBase,
-        unitCostPoisha: Math.round(totalCost / targetYieldBase),
+        return batch
       })
 
-      return batch
-    })
+      await db.insert(schema.auditLogs).values({
+        userId: user.id,
+        action: 'production.create',
+        entity: 'production_batch',
+        entityId: batch.id,
+        details: { recipe: recipe.name, targetYieldBase },
+      })
 
-    await db.insert(schema.auditLogs).values({
-      userId: user.id,
-      action: 'production.create',
-      entity: 'production_batch',
-      entityId: batch.id,
-      details: { recipe: recipe.name, targetYieldBase },
-    })
-
-    return sendJson(res, 201, { batch })
-  } catch (err) {
-    if (err.statusCode) return sendJson(res, err.statusCode, { error: err.message })
-    console.error('production error:', err)
-    return sendJson(res, 500, { error: 'Something went wrong. Please try again.' })
+      return sendJson(res, 201, { batch })
+    } catch (err) {
+      if (err.statusCode) return sendJson(res, err.statusCode, { error: err.message })
+      console.error('production error:', err)
+      return sendJson(res, 500, { error: err.message || 'Something went wrong. Please try again.' })
+    }
   }
 }
