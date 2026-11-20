@@ -173,7 +173,7 @@ export default async function handler(req, res) {
 
     return sendJson(res, 201, { expense })
   } catch (err) {
-    console.error('expenses error:', err)
-    return sendJson(res, 500, { error: 'Something went wrong. Please try again.' })
+    console.error('expenses error:', err, err.stack)
+    return sendJson(res, 500, { error: err.message || 'Something went wrong. Please try again.' })
   }
 }

@@ -1,126 +1,110 @@
-/**
- * Shared unit + money helpers — used by both the API and the frontend.
- *
- * QUANTITIES are always stored/transferred in BASE units as integers:
- *   mass -> grams (kg x 1000), volume -> millilitres (L x 1000),
- *   count/other -> whole units.
- * MONEY is always stored/transferred in poisha (1 BDT = 100 poisha).
+/** MUNCHIVO — shared unit & money helpers (used by both API handlers and the
+ * frontend). All money is in poisha (1 BDT = 100 poisha); all quantities are
+ * in the ingredient's base unit (grams for mass, millilitres for volume,
+ * whole units for count/other).
  */
 
-export const DISPLAY_UNITS = [
-  'kg',
-  'g',
-  'L',
-  'ml',
-  'pcs',
-  'Packet',
-  'Bottle',
-  'Box',
-]
-
-const UNIT_TYPE_MAP = {
-  kg: 'mass',
-  g: 'mass',
-  L: 'volume',
-  ml: 'volume',
-  pcs: 'count',
-  Packet: 'count',
-  Bottle: 'count',
-  Box: 'count',
-}
-
-export function unitTypeFor(displayUnit) {
-  return UNIT_TYPE_MAP[displayUnit] || 'other'
-}
-
-export function baseUnitFor(unitType) {
-  switch (unitType) {
-    case 'mass':
-      return 'g'
-    case 'volume':
-      return 'ml'
-    case 'count':
-      return 'pcs'
-    default:
-      return 'unit'
-  }
-}
+const UNIT_TO_BASE = new Map([
+  /** mass */
+  ['g', 1],
+  ['gram', 1],
+  ['grams', 1],
+  ['kg', 1000],
+  ['kilogram', 1000],
+  ['kilograms', 1000],
+  ['lb', 453.592],
+  ['lbs', 453.592],
+  ['ounce', 28.3495],
+  ['ounces', 28.3495],
+  /** volume */
+  ['ml', 1],
+  ['millilitre', 1],
+  ['millilitres', 1],
+  ['milliliter', 1],
+  ['milliliters', 1],
+  ['l', 1000],
+  ['L', 1000],
+  ['litre', 1000],
+  ['litres', 1000],
+  ['liter', 1000],
+  ['liters', 1000],
+  ['cup', 250],
+  ['cups', 250],
+  ['tbsp', 15],
+  ['tsp', 5],
+  ['gal', 3785.41],
+  ['galon', 3785.41],
+  ['galons', 3785.41],
+  /** count / pieces */
+  ['pcs', 1],
+  ['piece', 1],
+  ['pieces', 1],
+  ['unit', 1],
+  ['units', 1],
+  ['each', 1],
+  ['box', 1],
+  ['boxes', 1],
+  ['packet', 1],
+  ['packets', 1],
+  ['bottle', 1],
+  ['bottles', 1],
+])
 
 /**
- * Convert a quantity in the display unit to base units (integer).
- * Throws when the unit is unknown.
+ * Convert a display-unit quantity to the ingredient's base unit (grams/ml/units).
+ * Round to whole base units (no float arithmetic anywhere in the system).
  */
 export function toBase(quantity, displayUnit) {
-  const q = Number(quantity)
-  if (!Number.isFinite(q)) return 0
-  let value
-  switch (displayUnit) {
-    case 'kg':
-      value = q * 1000
-      break
-    case 'g':
-      value = q
-      break
-    case 'L':
-      value = q * 1000
-      break
-    case 'ml':
-      value = q
-      break
-    case 'pcs':
-    case 'Packet':
-    case 'Bottle':
-    case 'Box':
-      value = q
-      break
-    default:
-      value = q
-  }
-  return Math.round(value)
+  const qty = Number(quantity)
+  if (!displayUnit || qty <= 0 || !isFinite(qty)) return 0
+  const factor = UNIT_TO_BASE.get(displayUnit.toLowerCase().trim()) ?? 1
+  return Math.round(qty * factor)
 }
 
-/** Convert base units back to the display unit (decimal). */
-export function fromBase(baseQuantity, displayUnit) {
-  const q = Number(baseQuantity) || 0
-  switch (displayUnit) {
-    case 'kg':
-      return q / 1000
-    case 'g':
-      return q
-    case 'L':
-      return q / 1000
-    case 'ml':
-      return q
-    default:
-      return q
-  }
+/**
+ * Convert a base-unit quantity back to a display unit string suitable for
+ * user-facing labels (e.g. "10 kg", "2 L").
+ */
+export function fromBase(value, displayUnit) {
+  const v = Number(value)
+  if (!displayUnit || v <= 0 || !isFinite(v)) return 0
+  const factor = UNIT_TO_BASE.get(displayUnit.toLowerCase().trim()) ?? 1
+  const shown = Math.round(v / factor)
+  return shown
 }
 
-/** Human quantity, e.g. 19700 g in kg display -> "19.7 kg" */
-export function formatQty(baseQuantity, displayUnit) {
-  const value = fromBase(baseQuantity, displayUnit)
-  const decimals = displayUnit === 'kg' || displayUnit === 'L' ? 3 : 0
-  const trimmed = Number(value.toFixed(decimals))
-  const unit = UNIT_TYPE_MAP[displayUnit] ? displayUnit : displayUnit || 'unit'
-  return `${trimmed.toLocaleString('en-US', { maximumFractionDigits: 3 })} ${unit}`
+/**
+ * Human-readable quantity label: "10 kg" or "5 pcs".
+ */
+export function formatQty(quantityBase, displayUnit) {
+  const q = fromBase(quantityBase, displayUnit)
+  if (displayUnit) return `${q} ${displayUnit}`
+  return `${quantityBase} base`
 }
 
-/** Convert taka (decimal) to poisha (integer). */
-export function takaToPoisha(taka) {
-  return Math.round(Number(taka || 0) * 100)
-}
-
-/** Convert poisha (integer) to taka (decimal). */
-export function poishaToTaka(poisha) {
-  return (Number(poisha) || 0) / 100
-}
-
-/** Format poisha as BDT, e.g. 105050 -> "৳1,050.50" */
+/**
+ * Money formatting: poisha → BDT string with group separators.
+ */
 export function formatMoney(poisha) {
-  const taka = poishaToTaka(poisha)
-  const hasPoisha = Math.round(taka * 100) % 100 !== 0
-  return `৳${taka.toLocaleString('en-US', {
-    minimumFractionDigits: hasPoisha ? 2 : 0,
-    maximumFractionDigits: 2,
-  })}`
+  if (!Number.isFinite(poisha)) return '৳0'
+  const taka = Math.round(poisha / 100)
+  const formatted = taka.toLocaleString('en-BD')
+  return `৳${formatted}`
+}
+
+/** BDT (taka) string → poisha integer. */
+export function takaToPoisha(taka) {
+  if (!Number.isFinite(taka)) return 0
+  const p = Math.round(taka * 100)
+  return p
+}
+
+export { UNIT_TO_BASE }
+
+/** poisha → taka string (2 decimals, e.g. "৳45.00") */
+export function poishaToTaka(poisha) {
+  const v = Number(poisha)
+  if (!isFinite(v)) return '0.00'
+  const taka = v / 100
+  return taka.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }

@@ -110,18 +110,9 @@ export default async function handler(req, res) {
         return batch
       })
 
-      await db.insert(schema.auditLogs).values({
-        userId: user.id,
-        action: 'production.create',
-        entity: 'production_batch',
-        entityId: batch.id,
-        details: { recipe: recipe.name, targetYieldBase },
-      })
-
-      return sendJson(res, 201, { batch })
     } catch (err) {
       if (err.statusCode) return sendJson(res, err.statusCode, { error: err.message })
-      console.error('production error:', err)
+      console.error('production error:', err, err.stack)
       return sendJson(res, 500, { error: err.message || 'Something went wrong. Please try again.' })
     }
   }

@@ -131,12 +131,11 @@ export default async function handler(req, res) {
       details: { name },
     })
 
-    return sendJson(res, 201, { product })
-  } catch (err) {
+    return sendJson(res, 201, { product })    } catch (err) {
     if (err.code === '23505') {
       return sendJson(res, 409, { error: 'A product with this name already exists.' })
     }
-    console.error('products error:', err)
-    return sendJson(res, 500, { error: 'Something went wrong. Please try again.' })
+    console.error('products error:', err, err.stack)
+    return sendJson(res, 500, { error: err.message || 'Something went wrong. Please try again.' })
   }
 }

@@ -244,6 +244,74 @@ async function main() {
   })
   check('PATCH /api/partners/:id', partnerOff.status === 200)
 
+  /* ---------------- waste ---------------- */
+  const wasteList = await call('/api/waste')
+  check(
+    'GET /api/waste',
+    wasteList.status === 200 && Array.isArray(wasteList.data?.records),
+    wasteList.data?.error,
+  )
+
+  // Create an ingredient (if none exists) to test waste creation.
+  const existingIngredients = await call('/api/ingredients?status=active')
+  const testIngredient = existingIngredients.data?.ingredients?.find(
+    (i) => i.name === 'Smoke Test Ingredient',
+  )
+  let ingredientId = testIngredient?.id
+  if (!ingredientId) {
+    const newIngredient = await call('/api/ingredients', {
+      method: 'POST',
+      body: {
+        name: 'Smoke Test Ingredient',
+        unitType: 'mass',
+        displayUnit: 'g',
+        currentStockBase: 1000,
+        avgCostPoisha: 500,
+        minStockBase: 200,
+      },
+    })
+    if (newIngredient.status === 201) {
+      ingredientId = newIngredient.data?.ingredient?.id
+      check('POST /api/ingredients (for waste test)', true)
+    } else if (newIngredient.status === 409) {
+      // Already exists - get it
+      const found = await call('/api/ingredients?name=Smoke%20Test%20Ingredient')
+      ingredientId = found.data?.ingredients?.[0]?.id
+      check('POST /api/ingredients (for waste test)', true)
+    } else {
+      check('POST /api/ingredients (for waste test)', false, newIngredient.status)
+    }
+  }
+
+  if (ingredientId) {
+    // Test ingredient waste
+    // Restock the ingredient first (stock was 0 due to previous failed test)
+    await db
+      .update(schema.ingredients)
+      .set({ currentStockBase: 1000 })
+      .where(eq(schema.ingredients.id, ingredientId))
+
+    const wasteIngredient = await call('/api/waste', {
+      method: 'POST',
+      body: {
+        ingredientId,
+        quantity: 100,
+        reason: 'expired',
+        notes: 'Smoke test waste',
+      },
+    })
+    check(
+      'POST /api/waste (ingredient)',
+      wasteIngredient.status === 201 && wasteIngredient.data?.record?.id,
+      wasteIngredient.data?.error || wasteIngredient.status,
+    )
+    if (wasteIngredient.status === 201) {
+      await db
+        .delete(schema.wasteRecords)
+        .where(eq(schema.wasteRecords.id, wasteIngredient.data.record.id))
+    }
+  }
+
   /* ---------------- settings ---------------- */
   const business = await call('/api/settings/business', {
     method: 'PATCH',
@@ -286,6 +354,14 @@ async function main() {
     await db
       .delete(schema.expenseCategories)
       .where(inArray(schema.expenseCategories.id, [categoryId]))
+  }
+  // Remove smoke test ingredient and restore stock
+  if (ingredientId) {
+    await db
+      .update(schema.ingredients)
+      .set({ currentStockBase: 1000, avgCostPoisha: 500 })
+      .where(eq(schema.ingredients.id, ingredientId))
+    await db.delete(schema.ingredients).where(eq(schema.ingredients.id, ingredientId))
   }
   if (businessExisted) {
     await db

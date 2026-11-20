@@ -96,7 +96,7 @@ export default async function handler(req, res) {
           err.statusCode = 400
           throw err
         }
-        const perServing = product.servingSizeBase || null
+    const perServing = product.servingSizeBase ?? null
         if (!perServing) {
           const err = new Error(
             `${product.name} has no serving size — record ingredient waste instead.`,
@@ -117,6 +117,22 @@ export default async function handler(req, res) {
           quantityBase,
           userId: user.id,
         })
+      }
+
+      // Only record inventory movement for ingredient waste.
+      if (body.ingredientId) {
+        await tx
+          .insert(schema.inventoryMovements)
+          .values({
+            ingredientId: ingredient.id,
+            movementType: MOVEMENT_TYPES.WASTE,
+            quantityDeltaBase: -quantityBase,
+            unitCostPoisha: ingredient.avgCostPoisha,
+            balanceAfterBase: ingredient.currentStockBase - quantityBase,
+            userId,
+            notes: `Waste (${body.reason})${body.notes ? ` — ${body.notes}` : ''}`,
+            wasteId: undefined,
+          })
       }
 
       const [record] = await tx
