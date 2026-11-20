@@ -119,22 +119,6 @@ export default async function handler(req, res) {
         })
       }
 
-      // Only record inventory movement for ingredient waste.
-      if (body.ingredientId) {
-        await tx
-          .insert(schema.inventoryMovements)
-          .values({
-            ingredientId: ingredient.id,
-            movementType: MOVEMENT_TYPES.WASTE,
-            quantityDeltaBase: -quantityBase,
-            unitCostPoisha: ingredient.avgCostPoisha,
-            balanceAfterBase: ingredient.currentStockBase - quantityBase,
-            userId,
-            notes: `Waste (${body.reason})${body.notes ? ` — ${body.notes}` : ''}`,
-            wasteId: undefined,
-          })
-      }
-
       const [record] = await tx
         .insert(schema.wasteRecords)
         .values({
@@ -162,6 +146,6 @@ export default async function handler(req, res) {
   } catch (err) {
     if (err.statusCode) return sendJson(res, err.statusCode, { error: err.message })
     console.error('waste error:', err)
-    return sendJson(res, 500, { error: 'Something went wrong. Please try again.' })
+    return sendJson(res, 500, { error: err.message || 'Something went wrong. Please try again.' })
   }
 }

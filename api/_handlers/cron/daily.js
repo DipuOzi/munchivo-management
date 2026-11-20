@@ -43,8 +43,8 @@ async function sendPushToAll(payload) {
                 p256dh: sub.p256dhKey,
                 auth: sub.authKey,
               },
-              ...payload,
             },
+            JSON.stringify(payload),
           )
           await db
             .update(schema.pushSubscriptions)

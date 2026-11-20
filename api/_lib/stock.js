@@ -71,7 +71,7 @@ export async function deductStock(
     balanceAfterBase: balanceAfter,
     userId,
     notes,
-    ...(referenceId ? { purchaseId: movementType.includes('purchase') ? referenceId : null } : {}),
+    ...(referenceId ? { purchaseId: movementType && movementType.includes('purchase') ? referenceId : null } : {}),
   })
 
   await checkLowStockTx(tx, { ...ingredient, currentStockBase: balanceAfter })
@@ -155,8 +155,6 @@ export async function checkLowStockTx(tx, ingredient) {
         entityId: ingredient.id,
       })
       .returning()
-    // Push is dispatched by the notification layer outside the stock
-    // transaction, so stock mutations never depend on the push provider.
     return notification
   }
 

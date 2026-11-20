@@ -58,7 +58,7 @@ export default async function handler(req, res) {
           const recipe = item.recipeId
             ? (await tx.select().from(schema.recipes).where(eq(schema.recipes.id, item.recipeId)).limit(1))[0]
             : null
-          const perServing = productServingBase(tx, item, recipe)
+          const perServing = await productServingBase(tx, item, recipe)
           if (perServing) {
             const qty = perServing * item.quantity
             if (batch) {

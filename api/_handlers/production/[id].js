@@ -105,7 +105,7 @@ export default async function handler(req, res) {
   } catch (err) {
     if (err.statusCode) return sendJson(res, err.statusCode, { error: err.message })
     console.error('production detail error:', err)
-    return sendJson(res, 500, { error: 'Something went wrong. Please try again.' })
+    return sendJson(res, 500, { error: err.message || 'Something went wrong. Please try again.' })
   }
 }
 

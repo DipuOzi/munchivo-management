@@ -4,6 +4,78 @@
  * whole units for count/other).
  */
 
+export const DISPLAY_UNITS = [
+  'kg',
+  'g',
+  'L',
+  'ml',
+  'pcs',
+  'Packet',
+  'Bottle',
+  'Box',
+]
+
+const UNIT_TYPE_MAP = {
+  kg: 'mass',
+  g: 'mass',
+  gram: 'mass',
+  grams: 'mass',
+  kilogram: 'mass',
+  kilograms: 'mass',
+  lb: 'mass',
+  lbs: 'mass',
+  ounce: 'mass',
+  ounces: 'mass',
+  l: 'volume',
+  L: 'volume',
+  ml: 'volume',
+  millilitre: 'volume',
+  millilitres: 'volume',
+  milliliter: 'volume',
+  milliliters: 'volume',
+  litre: 'volume',
+  litres: 'volume',
+  liter: 'volume',
+  liters: 'volume',
+  cup: 'volume',
+  cups: 'volume',
+  tbsp: 'volume',
+  tsp: 'volume',
+  gal: 'volume',
+  galon: 'volume',
+  galons: 'volume',
+  pcs: 'count',
+  piece: 'count',
+  pieces: 'count',
+  unit: 'count',
+  units: 'count',
+  each: 'count',
+  box: 'count',
+  boxes: 'count',
+  packet: 'count',
+  packets: 'count',
+  bottle: 'count',
+  bottles: 'count',
+}
+
+export function unitTypeFor(displayUnit) {
+  if (!displayUnit) return 'other'
+  return UNIT_TYPE_MAP[displayUnit] || UNIT_TYPE_MAP[displayUnit.toLowerCase().trim()] || 'other'
+}
+
+export function baseUnitFor(unitType) {
+  switch (unitType) {
+    case 'mass':
+      return 'g'
+    case 'volume':
+      return 'ml'
+    case 'count':
+      return 'pcs'
+    default:
+      return 'unit'
+  }
+}
+
 const UNIT_TO_BASE = new Map([
   /** mass */
   ['g', 1],
@@ -56,55 +128,57 @@ const UNIT_TO_BASE = new Map([
  */
 export function toBase(quantity, displayUnit) {
   const qty = Number(quantity)
-  if (!displayUnit || qty <= 0 || !isFinite(qty)) return 0
+  if (!displayUnit || qty === 0 || !isFinite(qty)) return 0
   const factor = UNIT_TO_BASE.get(displayUnit.toLowerCase().trim()) ?? 1
   return Math.round(qty * factor)
 }
 
 /**
- * Convert a base-unit quantity back to a display unit string suitable for
- * user-facing labels (e.g. "10 kg", "2 L").
+ * Convert a base-unit quantity back to a display unit number (e.g. 1500 g -> 1.5 kg).
  */
 export function fromBase(value, displayUnit) {
   const v = Number(value)
   if (!displayUnit || v <= 0 || !isFinite(v)) return 0
   const factor = UNIT_TO_BASE.get(displayUnit.toLowerCase().trim()) ?? 1
-  const shown = Math.round(v / factor)
-  return shown
+  return v / factor
 }
 
 /**
- * Human-readable quantity label: "10 kg" or "5 pcs".
+ * Human-readable quantity label: "10 kg", "1.5 kg", or "5 pcs".
  */
 export function formatQty(quantityBase, displayUnit) {
-  const q = fromBase(quantityBase, displayUnit)
-  if (displayUnit) return `${q} ${displayUnit}`
+  const value = fromBase(quantityBase, displayUnit)
+  const isDecimalUnit = ['kg', 'l', 'litre', 'litres', 'liter', 'liters'].includes(
+    displayUnit?.toLowerCase().trim(),
+  )
+  const decimals = isDecimalUnit ? 3 : 2
+  const trimmed = Number(value.toFixed(decimals))
+  if (displayUnit) return `${trimmed.toLocaleString('en-US', { maximumFractionDigits: 3 })} ${displayUnit}`
   return `${quantityBase} base`
 }
 
 /**
- * Money formatting: poisha → BDT string with group separators.
+ * Money formatting: poisha → BDT string with group separators, e.g. "৳1,050.50" or "৳1,050".
  */
 export function formatMoney(poisha) {
   if (!Number.isFinite(poisha)) return '৳0'
-  const taka = Math.round(poisha / 100)
-  const formatted = taka.toLocaleString('en-BD')
-  return `৳${formatted}`
+  const taka = poisha / 100
+  const hasPoisha = Math.round(taka * 100) % 100 !== 0
+  return `৳${taka.toLocaleString('en-US', {
+    minimumFractionDigits: hasPoisha ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`
 }
 
-/** BDT (taka) string → poisha integer. */
+/** BDT (taka) number/string → poisha integer. */
 export function takaToPoisha(taka) {
-  if (!Number.isFinite(taka)) return 0
-  const p = Math.round(taka * 100)
-  return p
+  return Math.round(Number(taka || 0) * 100)
 }
 
 export { UNIT_TO_BASE }
 
-/** poisha → taka string (2 decimals, e.g. "৳45.00") */
+/** poisha integer → taka decimal number. */
 export function poishaToTaka(poisha) {
-  const v = Number(poisha)
-  if (!isFinite(v)) return '0.00'
-  const taka = v / 100
-  return taka.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return (Number(poisha) || 0) / 100
 }
+

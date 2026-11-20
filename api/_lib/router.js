@@ -28,6 +28,12 @@ const routes = [
   ['DELETE', '/api/ingredients/:id', () => import('../_handlers/ingredients/[id].js')],
   ['POST', '/api/stock/adjust', () => import('../_handlers/stock/adjust.js')],
 
+  ['GET', '/api/suppliers', () => import('../_handlers/suppliers/index.js')],
+  ['POST', '/api/suppliers', () => import('../_handlers/suppliers/index.js')],
+  ['GET', '/api/suppliers/:id', () => import('../_handlers/suppliers/[id].js')],
+  ['PATCH', '/api/suppliers/:id', () => import('../_handlers/suppliers/[id].js')],
+  ['DELETE', '/api/suppliers/:id', () => import('../_handlers/suppliers/[id].js')],
+
   ['GET', '/api/purchases', () => import('../_handlers/purchases/index.js')],
   ['POST', '/api/purchases', () => import('../_handlers/purchases/index.js')],
   ['GET', '/api/purchases/:id', () => import('../_handlers/purchases/[id].js')],
