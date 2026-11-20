@@ -210,11 +210,11 @@ function PurchaseForm({ ingredients, suppliers, onClose, onSaved }) {
     try {
       await api('/api/purchases', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           ...form,
           initialPaid: form.initialPaid || 0,
           items: validItems,
-        }),
+        },
       })
       onSaved()
     } catch (err) {

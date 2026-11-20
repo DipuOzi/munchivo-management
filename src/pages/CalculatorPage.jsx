@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal.jsx'
 /**
  * CALCULATOR — pure calculation page.
  * NOTHING here ever deducts inventory (spec §10). Inventory is only
- * deducted by confirmed production or sales.
+ * deducted by confirmed sales.
  */
 export default function CalculatorPage() {
   const [tab, setTab] = useState('scale')
@@ -365,7 +365,7 @@ function SaveAsRecipe({ rows, onClose, onSaved }) {
     try {
       await api('/api/recipes', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           name,
           yieldUnit,
           baseYield: Number(baseYield),
@@ -373,7 +373,7 @@ function SaveAsRecipe({ rows, onClose, onSaved }) {
             ingredientId: r.ingredient.id,
             quantityBase: r.quantityBase,
           })),
-        }),
+        },
       })
       onSaved()
     } catch (err) {

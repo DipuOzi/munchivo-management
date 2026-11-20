@@ -159,8 +159,7 @@ export const inventoryMovements = pgTable(
       .notNull()
       .references(() => ingredients.id, { onDelete: 'cascade' }),
     /** opening_stock | purchase | purchase_reversal | adjustment |
-        production_output | production_consumption | sale_consumption |
-        waste | expiry */
+        sale_consumption | sale_reversal | waste | waste_reversal | expiry */
     movementType: text('movement_type').notNull(),
     quantityDeltaBase: integer('quantity_delta_base').notNull(),
     /** weighted-average cost per base unit applied to this movement */
@@ -382,11 +381,6 @@ export const products = pgTable(
     recipeId: uuid('recipe_id').references(() => recipes.id, {
       onDelete: 'set null',
     }),
-    servingSize: text('serving_size'),
-    /** per-serving amount in the recipe's yield base units (for batch costing) */
-    servingSizeBase: integer('serving_size_base'),
-    /** direct = deduct recipe ingredients at sale; batch = deduct prepared stock */
-    workflow: text('workflow').notNull().default('direct'),
     packagingCostPoisha: integer('packaging_cost_poisha').notNull().default(0),
     notes: text('notes'),
     /** active | archived */
@@ -406,71 +400,6 @@ export const products = pgTable(
     index('products_status_idx').on(table.status),
   ],
 )
-/* ------------------------------------------------------------------ */
-/* PRODUCTION BATCHES — recipe-based batch preparation. Confirming     */
-/* deducts every ingredient (scaled by factor) and creates prepared    */
-/* stock for batch-workflow products.                                  */
-/* ------------------------------------------------------------------ */
-export const productionBatches = pgTable(
-  'production_batches',
-  {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-    recipeId: uuid('recipe_id')
-      .notNull()
-      .references(() => recipes.id),
-    productId: uuid('product_id').references(() => products.id, {
-      onDelete: 'set null',
-    }),
-    /** scaled output amount, in the recipe's yield base unit */
-    targetYieldBase: integer('target_yield_base').notNull(),
-    /** confirmed | cancelled */
-    status: text('status').notNull().default('confirmed'),
-    ingredientCostPoisha: integer('ingredient_cost_poisha').notNull().default(0),
-    notes: text('notes'),
-    createdBy: uuid('created_by').references(() => users.id, {
-      onDelete: 'set null',
-    }),
-    cancelledBy: uuid('cancelled_by').references(() => users.id, {
-      onDelete: 'set null',
-    }),
-    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    index('production_batches_created_idx').on(table.createdAt),
-    index('production_batches_status_idx').on(table.status),
-  ],
-)
-
-/* Prepared stock: output of production, consumed by batch-workflow sales */
-export const preparedStock = pgTable(
-  'prepared_stock',
-  {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-    batchId: uuid('batch_id')
-      .notNull()
-      .references(() => productionBatches.id, { onDelete: 'cascade' }),
-    productId: uuid('product_id').references(() => products.id, {
-      onDelete: 'set null',
-    }),
-    recipeId: uuid('recipe_id')
-      .notNull()
-      .references(() => recipes.id),
-    quantityOriginalBase: integer('quantity_original_base').notNull(),
-    quantityRemainingBase: integer('quantity_remaining_base').notNull(),
-    /** actual production cost per base unit, in poisha */
-    unitCostPoisha: integer('unit_cost_poisha').notNull(),
-    /** active | depleted */
-    status: text('status').notNull().default('active'),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [index('prepared_stock_product_idx').on(table.productId, table.status)],
-)
-
 /* ------------------------------------------------------------------ */
 /* SALES                                                               */
 /* ------------------------------------------------------------------ */
@@ -528,8 +457,6 @@ export const saleItems = pgTable(
     quantity: integer('quantity').notNull(),
     unitPricePoisha: integer('unit_price_poisha').notNull(),
     lineTotalPoisha: integer('line_total_poisha').notNull(),
-    /** direct (recipe ingredients) | batch (prepared stock) */
-    workflow: text('workflow').notNull().default('direct'),
     recipeId: uuid('recipe_id'),
     cogsPoisha: integer('cogs_poisha').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true })

@@ -9,7 +9,6 @@ const EMPTY = {
   description: '',
   sellingPrice: '',
   recipeId: '',
-  servingSize: '',
   packagingCost: '',
   notes: '',
 }
@@ -91,10 +90,10 @@ export default function ProductsPage() {
                 <tr>
                   <th>Product</th>
                   <th>Category</th>
-                  <th>Recipe</th>
-                  <th>Price</th>
-                  <th>Est. cost/serving</th>
-                  <th>Est. margin</th>
+                    <th>Recipe</th>
+                    <th>Price</th>
+                    <th>Est. cost</th>
+                    <th>Est. margin</th>
                   <th>Status</th>
                   <th></th>
                 </tr>
@@ -112,7 +111,7 @@ export default function ProductsPage() {
                     <td>{p.recipeName || '—'}</td>
                     <td className="money">{formatMoney(p.sellingPricePoisha)}</td>
                     <td className="money">
-                      {p.estimate ? formatMoney(p.estimate.totalCostPerServing) : '—'}
+                      {p.estimate ? formatMoney(p.estimate.totalCostPerUnit) : '—'}
                     </td>
                     <td>
                       {p.estimate ? (
@@ -181,8 +180,6 @@ export default function ProductsPage() {
 
 /* ------------------------------------------------------------------ */
 function ProductForm({ product, recipes, categories, onCategoryCreated, onClose, onSaved }) {
-  const recipeById = (id) => recipes.find((r) => r.id === id)
-
   const [form, setForm] = useState(() => {
     if (!product) return EMPTY
     return {
@@ -191,7 +188,6 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
       description: product.description || '',
       sellingPrice: String(product.sellingPricePoisha / 100),
       recipeId: product.recipeId || '',
-      servingSize: product.servingSize ? String(product.servingSize) : '',
       packagingCost: product.packagingCostPoisha ? String(product.packagingCostPoisha / 100) : '',
       notes: product.notes || '',
     }
@@ -199,8 +195,6 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
   const [newCategory, setNewCategory] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
-
-  const selectedRecipe = recipeById(form.recipeId)
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -228,7 +222,7 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
 
     setSaving(true)
     try {
-      const payload = { ...form, servingSize: form.servingSize || null }
+      const payload = { ...form }
       if (product) {
         await api(`/api/products/${product.id}`, { method: 'PATCH', body: payload })
       } else {
@@ -301,22 +295,6 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
               ))}
             </select>
           </div>
-          {selectedRecipe && (
-            <div className="field">
-              <label className="field__label">
-                Serving size ({selectedRecipe.yieldUnit}, from one batch yield)
-              </label>
-              <input
-                className="field__control"
-                type="number"
-                min="0"
-                step="any"
-                placeholder={String(selectedRecipe.baseYieldBase)}
-                value={form.servingSize}
-                onChange={(e) => set('servingSize', e.target.value)}
-              />
-            </div>
-          )}
           <div className="field">
             <label className="field__label">Packaging cost per serving (৳)</label>
             <input

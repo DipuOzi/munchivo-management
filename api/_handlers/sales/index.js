@@ -1,9 +1,8 @@
 /**
  * GET  /api/sales  — list with filters (date range, payment, product)
- * POST /api/sales  — record a sale; deducts inventory per product workflow:
- *
- *   direct: ingredients deducted immediately via the product's recipe
- *   batch:  prepared stock (from production) deducted
+ * POST /api/sales  — record a sale; deducts the product's recipe
+ *   ingredients at sale time (direct costing). Products without a recipe
+ *   (e.g. bought-in drinks) deduct no ingredients.
  *
  * Duplicate submissions are blocked via the unique clientToken.
  *
@@ -14,7 +13,7 @@ import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../../../src/db/index.js'
 import { readJson, sendJson } from '../../_lib/http.js'
 import { withAuth } from '../../_lib/guard.js'
-import { deductStock, consumePreparedStock, MOVEMENT_TYPES } from '../../_lib/stock.js'
+import { deductStock, MOVEMENT_TYPES } from '../../_lib/stock.js'
 import { takaToPoisha } from '../../../src/shared/units.js'
 
 export default async function handler(req, res) {
@@ -157,28 +156,10 @@ export default async function handler(req, res) {
       for (const line of itemLines) {
         const { product, quantity, lineTotal } = line
         let cogs = 0
-        let workflow = 'direct'
 
-        if (product.workflow === 'batch') {
-          // Prepared stock deducted; ingredients were already deducted
-          // at production time — no double deduction.
-          workflow = 'batch'
-          const servingBase = product.servingSizeBase || null
-          const recipe = product.recipeId ? recipeMap.get(product.recipeId) : null
-          const perServingBase = servingBase || recipe?.baseYieldBase || null
-          if (!perServingBase) {
-            const err = new Error(
-              `${product.name} uses batch workflow but has no serving size. Fix the product first.`,
-            )
-            err.statusCode = 400
-            throw err
-          }
-          cogs = await consumePreparedStock(tx, {
-            productId: product.id,
-            quantityBase: perServingBase * quantity,
-            userId: user.id,
-          })
-        } else if (product.recipeId) {
+        // Direct workflow: deduct the product's recipe ingredients now.
+        // Products without a recipe (e.g. bought-in drinks) deduct nothing.
+        if (product.recipeId) {
           const recipe = recipeMap.get(product.recipeId)
           if (recipe && recipe.items?.length) {
             for (const rItem of recipe.items) {
@@ -194,7 +175,6 @@ export default async function handler(req, res) {
             }
           }
         }
-        // Products without a recipe: no ingredient deduction (e.g. bought-in drinks).
 
         saleCogs += cogs
         itemRows.push({
@@ -203,7 +183,6 @@ export default async function handler(req, res) {
           quantity,
           unitPricePoisha: product.sellingPricePoisha,
           lineTotalPoisha: lineTotal,
-          workflow,
           recipeId: product.recipeId || null,
           cogsPoisha: cogs,
         })

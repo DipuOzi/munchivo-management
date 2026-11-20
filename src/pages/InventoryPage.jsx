@@ -23,8 +23,6 @@ const STOCK_MOVEMENT_LABELS = {
   purchase: 'Purchase',
   purchase_reversal: 'Purchase reversal',
   adjustment: 'Adjustment',
-  production_output: 'Production output',
-  production_consumption: 'Production consumption',
   sale_consumption: 'Sale consumption',
   waste: 'Waste',
   expiry: 'Expired',
@@ -233,7 +231,7 @@ export default function InventoryPage() {
                               onClick={async () => {
                                 await api(`/api/ingredients/${r.id}`, {
                                   method: 'PATCH',
-                                  body: JSON.stringify({ status: 'active' }),
+                                  body: { status: 'active' },
                                 })
                                 load()
                               }}

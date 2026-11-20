@@ -10,7 +10,7 @@ import { asc, eq, inArray, sql } from 'drizzle-orm'
 import { db, schema } from '../../../src/db/index.js'
 import { readJson, sendJson } from '../../_lib/http.js'
 import { withAuth } from '../../_lib/guard.js'
-import { toBase, takaToPoisha } from '../../../src/shared/units.js'
+import { takaToPoisha } from '../../../src/shared/units.js'
 
 export default async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) {
@@ -30,7 +30,6 @@ export default async function handler(req, res) {
           name: schema.products.name,
           description: schema.products.description,
           sellingPricePoisha: schema.products.sellingPricePoisha,
-          servingSize: schema.products.servingSize,
           packagingCostPoisha: schema.products.packagingCostPoisha,
           notes: schema.products.notes,
           status: schema.products.status,
@@ -56,22 +55,18 @@ export default async function handler(req, res) {
         .where(status === 'all' ? undefined : eq(schema.products.status, status))
         .orderBy(asc(schema.products.name))
 
-      // Estimated per-serving cost & margin
+      // Estimated cost & margin per unit (one unit = one full recipe batch).
       const products = rows.map((p) => {
         let estimate = null
         if (p.recipeId && p.recipeYieldBase > 0) {
           const recipeTotal = p.recipeIngredientCostPoisha + p.recipePackagingPoisha + p.recipeOtherPoisha
-          const costPerBase = Math.round(recipeTotal / p.recipeYieldBase)
-          const servingBase = p.servingSize ? toBase(p.servingSize, p.recipeYieldUnit) : p.recipeYieldBase
-          const ingredientCostPerServing = Math.round(costPerBase * servingBase)
-          const totalCostPerServing = ingredientCostPerServing + (p.packagingCostPoisha || 0)
-          const grossProfitPoisha = p.sellingPricePoisha - totalCostPerServing
+          const ingredientCostPerUnit = p.recipeIngredientCostPoisha
+          const totalCostPerUnit = recipeTotal + (p.packagingCostPoisha || 0)
+          const grossProfitPoisha = p.sellingPricePoisha - totalCostPerUnit
           estimate = {
             recipeTotalPoisha: recipeTotal,
-            costPerBase,
-            servingBase,
-            ingredientCostPerServing,
-            totalCostPerServing,
+            ingredientCostPerUnit,
+            totalCostPerUnit,
             grossProfitPoisha,
             marginPct:
               p.sellingPricePoisha > 0
@@ -95,17 +90,6 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: 'Selling price must be greater than zero.' })
     }
 
-    // Compute servingSizeBase from the assigned recipe's yield unit.
-    let servingSizeBase = null
-    if (body.recipeId && body.servingSize) {
-      const [recipe] = await db
-        .select({ yieldUnit: schema.recipes.yieldUnit })
-        .from(schema.recipes)
-        .where(eq(schema.recipes.id, body.recipeId))
-        .limit(1)
-      if (recipe) servingSizeBase = toBase(body.servingSize, recipe.yieldUnit)
-    }
-
     const [product] = await db
       .insert(schema.products)
       .values({
@@ -114,9 +98,6 @@ export default async function handler(req, res) {
         description: body.description?.trim() || null,
         sellingPricePoisha,
         recipeId: body.recipeId || null,
-        servingSize: body.servingSize ? String(body.servingSize) : null,
-        servingSizeBase,
-        workflow: body.workflow === 'batch' ? 'batch' : 'direct',
         packagingCostPoisha: takaToPoisha(body.packagingCost || 0),
         notes: body.notes?.trim() || null,
         createdBy: user.id,

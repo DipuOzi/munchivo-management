@@ -38,22 +38,6 @@ export default async function handler(req, res) {
           userId: user.id,
           notes: 'Waste record cancelled',
         })
-      } else if (record.productId) {
-        // Return to prepared stock — attach to the newest active batch.
-        const [batch] = await tx
-          .select()
-          .from(schema.preparedStock)
-          .where(eq(schema.preparedStock.productId, record.productId))
-          .limit(1)
-        if (batch) {
-          await tx
-            .update(schema.preparedStock)
-            .set({
-              quantityRemainingBase: batch.quantityRemainingBase + record.quantityBase,
-              status: 'active',
-            })
-            .where(eq(schema.preparedStock.id, batch.id))
-        }
       }
 
       await tx

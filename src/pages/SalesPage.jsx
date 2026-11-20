@@ -61,8 +61,8 @@ export default function SalesPage() {
       <div>
         <h1>Sales</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Recording a sale deducts ingredients or prepared stock automatically.
-          Profits use the real cost at the moment of sale.
+          Recording a sale deducts the product&apos;s recipe ingredients
+          automatically. Profits use the real cost at the moment of sale.
         </p>
       </div>
 
@@ -422,9 +422,6 @@ function SaleDetail({ saleId, onClose, onChanged }) {
             <div className="summary-line" key={it.id}>
               <span>
                 {it.productName} ×{it.quantity}
-                <span style={{ color: 'var(--muted)', fontSize: 12 }}>
-                  {' '}· {it.workflow === 'batch' ? 'prepared stock' : 'direct'}
-                </span>
               </span>
               <strong className="money">{formatMoney(it.lineTotalPoisha)}</strong>
             </div>

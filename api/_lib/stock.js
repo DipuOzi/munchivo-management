@@ -16,9 +16,6 @@ export const MOVEMENT_TYPES = {
   PURCHASE: 'purchase',
   PURCHASE_REVERSAL: 'purchase_reversal',
   ADJUSTMENT: 'adjustment',
-  PRODUCTION_CONSUMPTION: 'production_consumption',
-  PRODUCTION_REVERSAL: 'production_reversal',
-  PRODUCTION_OUTPUT: 'production_output',
   SALE_CONSUMPTION: 'sale_consumption',
   SALE_REVERSAL: 'sale_reversal',
   WASTE: 'waste',
@@ -172,51 +169,4 @@ export async function checkLowStockTx(tx, ingredient) {
       )
   }
   return null
-}
-
-/**
- * Deduct from prepared stock (batch workflow) FEFO/oldest-first.
- * Returns actual cost deducted.
- */
-export async function consumePreparedStock(
-  tx,
-  { productId, quantityBase, userId, saleId },
-) {
-  let remaining = quantityBase
-  let cogs = 0
-
-  const batches = await tx
-    .select()
-    .from(schema.preparedStock)
-    .where(
-      and(
-        productId ? eq(schema.preparedStock.productId, productId) : sql`false`,
-        eq(schema.preparedStock.status, 'active'),
-      ),
-    )
-    .orderBy(schema.preparedStock.createdAt)
-
-  const available = batches.reduce((s, b) => s + b.quantityRemainingBase, 0)
-  if (available < remaining) {
-    const err = new Error(
-      `Not enough prepared stock (need ${quantityBase} base units, have ${available}). Run production first.`,
-    )
-    err.statusCode = 400
-    throw err
-  }
-
-  for (const batch of batches) {
-    if (remaining <= 0) break
-    const take = Math.min(remaining, batch.quantityRemainingBase)
-    await tx
-      .update(schema.preparedStock)
-      .set({
-        quantityRemainingBase: batch.quantityRemainingBase - take,
-        status: batch.quantityRemainingBase - take <= 0 ? 'depleted' : 'active',
-      })
-      .where(eq(schema.preparedStock.id, batch.id))
-    cogs += take * batch.unitCostPoisha
-    remaining -= take
-  }
-  return cogs
 }

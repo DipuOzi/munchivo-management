@@ -5,7 +5,6 @@
  * and keeps alerting in sync:
  *   - creates expiry alerts for batches inside the configured window
  *   - resolves expiry alerts whose batch is gone or used up
- *   - creates ageing alerts for prepared stock older than 48 hours
  *   - re-checks low stock and auto-resolves replenished ingredients
  *   - removes expired session rows
  *
@@ -159,79 +158,6 @@ export default async function handler(req, res) {
       resolvedAlerts += 1
     }
 
-    /* ---------------- Prepared stock ageing ---------------- */
-    const cutoff = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-    const oldPrepared = await db
-      .select({
-        id: schema.preparedStock.id,
-        quantityRemainingBase: schema.preparedStock.quantityRemainingBase,
-        createdAt: schema.preparedStock.createdAt,
-        productName: schema.products.name,
-        recipeName: schema.recipes.name,
-      })
-      .from(schema.preparedStock)
-      .leftJoin(
-        schema.products,
-        eq(schema.preparedStock.productId, schema.products.id),
-      )
-      .innerJoin(
-        schema.recipes,
-        eq(schema.preparedStock.recipeId, schema.recipes.id),
-      )
-      .where(
-        and(
-          eq(schema.preparedStock.status, 'active'),
-          gt(schema.preparedStock.quantityRemainingBase, 0),
-          lte(schema.preparedStock.createdAt, cutoff),
-        ),
-      )
-
-    const existingPreparedAlerts = await db
-      .select()
-      .from(schema.notifications)
-      .where(
-        and(
-          eq(schema.notifications.type, 'expiry'),
-          eq(schema.notifications.entityType, 'prepared_stock'),
-          eq(schema.notifications.resolved, false),
-        ),
-      )
-    const alertedPreparedIds = new Set(
-      existingPreparedAlerts.map((n) => n.entityId),
-    )
-
-    let preparedAlertsCreated = 0
-    for (const batch of oldPrepared) {
-      if (alertedPreparedIds.has(batch.id)) continue
-      const ageDays = Math.floor(
-        (Date.now() - new Date(batch.createdAt).getTime()) /
-          (24 * 60 * 60 * 1000),
-      )
-      await db.insert(schema.notifications).values({
-        type: 'expiry',
-        severity: 'warning',
-        title: 'PREPARED STOCK AGEING',
-        body: `${
-          batch.productName || batch.recipeName
-        } has been in prepared stock for ${ageDays} day${
-          ageDays === 1 ? '' : 's'
-        } (${batch.quantityRemainingBase} base units left). Use or waste it.`,
-        entityType: 'prepared_stock',
-        entityId: batch.id,
-      })
-      preparedAlertsCreated += 1
-    }
-
-    const activePreparedIds = new Set(oldPrepared.map((b) => b.id))
-    for (const alert of existingPreparedAlerts) {
-      if (activePreparedIds.has(alert.entityId)) continue
-      await db
-        .update(schema.notifications)
-        .set({ resolved: true, resolvedAt: new Date() })
-        .where(eq(schema.notifications.id, alert.id))
-      resolvedAlerts += 1
-    }
-
     /* ---------------- Low stock re-check ---------------- */
     const thresholdIngredients = await db
       .select()
@@ -257,7 +183,7 @@ export default async function handler(req, res) {
       .where(lt(schema.sessions.expiresAt, new Date()))
       .returning({ id: schema.sessions.id })
 
-    const newAlerts = batchAlertsCreated + preparedAlertsCreated
+    const newAlerts = batchAlertsCreated
     if (newAlerts > 0) {
       sendPushToAll({
         title: 'Munchivo expiry alert',
@@ -274,7 +200,6 @@ export default async function handler(req, res) {
       ranAt: new Date().toISOString(),
       expiryAlertDays: alertDays,
       batchAlertsCreated,
-      preparedAlertsCreated,
       lowStockAlertsCreated,
       resolvedAlerts,
       sessionsDeleted: deletedSessions.length,

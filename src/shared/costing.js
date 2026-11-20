@@ -32,28 +32,3 @@ export function recipeCosting(recipe, items) {
     totalTaka: poishaToTaka(totalPoisha),
   }
 }
-
-export function productCosting(product, recipe, items) {
-  if (!recipe || !items) return null
-  const costing = recipeCosting(recipe, items)
-  const servingBase =
-    product.servingSizeBase && product.servingSizeBase > 0
-      ? product.servingSizeBase
-      : recipe.baseYieldBase
-  const ingredientCostPerServing = Math.round(costing.costPerBasePoisha * servingBase)
-  const totalCostPerServing = ingredientCostPerServing + (product.packagingCostPoisha || 0)
-  const grossProfitPoisha = product.sellingPricePoisha - totalCostPerServing
-  const marginPct =
-    product.sellingPricePoisha > 0
-      ? (grossProfitPoisha / product.sellingPricePoisha) * 100
-      : 0
-
-  return {
-    ...costing,
-    servingBase,
-    ingredientCostPerServing,
-    totalCostPerServing,
-    grossProfitPoisha,
-    marginPct: Math.round(marginPct * 10) / 10,
-  }
-}

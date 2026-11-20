@@ -9,7 +9,6 @@ import PurchasesPage from './pages/PurchasesPage.jsx'
 import RecipesPage from './pages/RecipesPage.jsx'
 import CalculatorPage from './pages/CalculatorPage.jsx'
 import ProductsPage from './pages/ProductsPage.jsx'
-import ProductionPage from './pages/ProductionPage.jsx'
 import SalesPage from './pages/SalesPage.jsx'
 import WastePage from './pages/WastePage.jsx'
 import ExpiryPage from './pages/ExpiryPage.jsx'
@@ -67,7 +66,6 @@ export default function App() {
         <Route path="recipes" element={<RecipesPage />} />
         <Route path="calculator" element={<CalculatorPage />} />
         <Route path="products" element={<ProductsPage />} />
-        <Route path="production" element={<ProductionPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="waste" element={<WastePage />} />
         <Route path="expiry" element={<ExpiryPage />} />

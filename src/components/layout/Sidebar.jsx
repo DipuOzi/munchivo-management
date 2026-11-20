@@ -16,7 +16,6 @@ const NAV_SECTIONS = [
       { to: '/recipes', label: 'Recipes', icon: 'book' },
       { to: '/calculator', label: 'Calculator', icon: 'calc' },
       { to: '/products', label: 'Products', icon: 'tag' },
-      { to: '/production', label: 'Production', icon: 'flame' },
       { to: '/sales', label: 'Sales', icon: 'cash' },
       { to: '/waste', label: 'Waste', icon: 'trash' },
       { to: '/expiry', label: 'Expiry', icon: 'clock' },

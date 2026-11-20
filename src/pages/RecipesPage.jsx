@@ -139,7 +139,7 @@ export default function RecipesPage() {
                               onClick={async () => {
                                 await api(`/api/recipes/${r.id}`, {
                                   method: 'PATCH',
-                                  body: JSON.stringify({ status: 'active' }),
+                                  body: { status: 'active' },
                                 })
                                 load()
                               }}
@@ -272,12 +272,12 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
       if (recipe) {
         await api(`/api/recipes/${recipe.id}`, {
           method: 'PATCH',
-          body: JSON.stringify({ ...form, baseYield: Number(form.baseYield), items: payloadItems }),
+          body: { ...form, baseYield: Number(form.baseYield), items: payloadItems },
         })
       } else {
         await api('/api/recipes', {
           method: 'POST',
-          body: JSON.stringify({ ...form, baseYield: Number(form.baseYield), items: payloadItems }),
+          body: { ...form, baseYield: Number(form.baseYield), items: payloadItems },
         })
       }
       onSaved()

@@ -3,8 +3,8 @@ import { api } from '../lib/api.js'
 import { formatMoney, formatQty, fromBase } from '../shared/units.js'
 
 /**
- * EXPIRY — purchase batches expiring within 7 days (or already expired,
- * still in stock) + prepared stock older than 48 hours.
+ * EXPIRY — purchase batches expiring within the configured window
+ * (or already expired, still in stock).
  */
 export default function ExpiryPage() {
   const [data, setData] = useState(null)
@@ -133,56 +133,6 @@ export default function ExpiryPage() {
                             >
                               Record as waste
                             </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <div className="card">
-            <div className="card__title">
-              <h3>Prepared stock older than 48 hours</h3>
-              {data.prepared.length > 0 && (
-                <span className="badge badge--warning">{data.prepared.length} batches</span>
-              )}
-            </div>
-            {data.prepared.length === 0 ? (
-              <div className="empty">
-                <span className="empty__icon" aria-hidden="true">🆕</span>
-                <span className="empty__title">All prepared stock is fresh</span>
-                <span className="empty__hint">
-                  Batch-workflow output older than 2 days shows up here — use or waste it.
-                </span>
-              </div>
-            ) : (
-              <div className="table-wrap">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Product</th>
-                      <th>Recipe</th>
-                      <th>Remaining</th>
-                      <th>Produced</th>
-                      <th>Age</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.prepared.map((p) => {
-                      const ageDays = Math.floor((Date.now() - new Date(p.createdAt)) / (24 * 60 * 60 * 1000))
-                      return (
-                        <tr key={p.id}>
-                          <td><strong>{p.name || 'Unassigned'}</strong></td>
-                          <td>{p.recipeName}</td>
-                          <td>{p.quantityRemainingBase} base</td>
-                          <td>{new Date(p.createdAt).toLocaleString()}</td>
-                          <td>
-                            <span className="badge badge--warning">
-                              {ageDays} day{ageDays === 1 ? '' : 's'} old
-                            </span>
                           </td>
                         </tr>
                       )

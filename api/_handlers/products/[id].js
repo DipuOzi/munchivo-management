@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from '../../../src/db/index.js'
 import { readJson, sendJson } from '../../_lib/http.js'
 import { withAuth } from '../../_lib/guard.js'
-import { toBase, takaToPoisha } from '../../../src/shared/units.js'
+import { takaToPoisha } from '../../../src/shared/units.js'
 
 export default async function handler(req, res) {
   if (!['PATCH', 'DELETE'].includes(req.method)) {
@@ -59,26 +59,6 @@ export default async function handler(req, res) {
       updates.sellingPricePoisha = sellingPricePoisha
     }
     if (body.recipeId !== undefined) updates.recipeId = body.recipeId || null
-    if (body.servingSize !== undefined) {
-      updates.servingSize = body.servingSize ? String(body.servingSize) : null
-      // recompute servingSizeBase with the (possibly new) recipe's unit
-      const recipeId = updates.recipeId !== undefined ? updates.recipeId : product.recipeId
-      if (recipeId && updates.servingSize) {
-        const [recipe] = await db
-          .select({ yieldUnit: schema.recipes.yieldUnit })
-          .from(schema.recipes)
-          .where(eq(schema.recipes.id, recipeId))
-          .limit(1)
-        updates.servingSizeBase = recipe ? toBase(updates.servingSize, recipe.yieldUnit) : null
-      } else {
-        updates.servingSizeBase = null
-      }
-    }
-    if (body.workflow !== undefined) {
-      if (!['direct', 'batch'].includes(body.workflow))
-        return sendJson(res, 400, { error: 'Invalid workflow.' })
-      updates.workflow = body.workflow
-    }
     if (body.packagingCost !== undefined)
       updates.packagingCostPoisha = takaToPoisha(body.packagingCost || 0)
     if (body.notes !== undefined) updates.notes = body.notes?.trim() || null

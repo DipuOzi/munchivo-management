@@ -2,7 +2,7 @@
  * GET    /api/sales/:id  — detail with items + refunds
  * DELETE /api/sales/:id  — cancel: reverses all inventory deductions
  */
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db, schema } from '../../../src/db/index.js'
 import { readJson, sendJson } from '../../_lib/http.js'
 import { withAuth } from '../../_lib/guard.js'
@@ -46,41 +46,8 @@ export default async function handler(req, res) {
         .where(eq(schema.saleItems.saleId, id))
 
       for (const item of items) {
-        if (item.workflow === 'batch') {
-          // Return quantity to prepared stock (no batch identity kept in
-          // sale items — return via a reversal batch row is avoided by
-          // restoring the newest active batch of the product).
-          const [batch] = await tx
-            .select()
-            .from(schema.preparedStock)
-            .where(and(eq(schema.preparedStock.productId, item.productId), eq(schema.preparedStock.status, 'active')))
-            .limit(1)
-          const recipe = item.recipeId
-            ? (await tx.select().from(schema.recipes).where(eq(schema.recipes.id, item.recipeId)).limit(1))[0]
-            : null
-          const perServing = await productServingBase(tx, item, recipe)
-          if (perServing) {
-            const qty = perServing * item.quantity
-            if (batch) {
-              await tx
-                .update(schema.preparedStock)
-                .set({
-                  quantityRemainingBase: batch.quantityRemainingBase + qty,
-                  status: 'active',
-                })
-                .where(eq(schema.preparedStock.id, batch.id))
-            } else {
-              await tx.insert(schema.preparedStock).values({
-                batchId: null,
-                productId: item.productId,
-                recipeId: item.recipeId,
-                quantityOriginalBase: qty,
-                quantityRemainingBase: qty,
-                unitCostPoisha: item.cogsPoisha > 0 ? Math.round(item.cogsPoisha / qty) : 0,
-              })
-            }
-          }
-        } else if (item.recipeId) {
+        // Direct sales deducted the product's recipe ingredients — return them.
+        if (item.recipeId) {
           const recipeItems = await tx
             .select()
             .from(schema.recipeItems)
@@ -117,13 +84,4 @@ export default async function handler(req, res) {
     console.error('sale detail error:', err)
     return sendJson(res, 500, { error: 'Something went wrong. Please try again.' })
   }
-}
-
-async function productServingBase(tx, saleItem, recipe) {
-  const [product] = await tx
-    .select({ servingSizeBase: schema.products.servingSizeBase })
-    .from(schema.products)
-    .where(eq(schema.products.id, saleItem.productId))
-    .limit(1)
-  return product?.servingSizeBase || recipe?.baseYieldBase || null
 }

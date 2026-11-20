@@ -165,24 +165,18 @@ export default function WastePage() {
 
 /* ------------------------------------------------------------------ */
 function WasteForm({ onClose, onSaved }) {
-  const [kind, setKind] = useState('ingredient')
   const [ingredients, setIngredients] = useState([])
-  const [products, setProducts] = useState([])
-  const [form, setForm] = useState({ ingredientId: '', productId: '', quantity: '', reason: 'spoiled', notes: '' })
+  const [form, setForm] = useState({ ingredientId: '', quantity: '', reason: 'spoiled', notes: '' })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    Promise.all([api('/api/ingredients?status=active'), api('/api/products?status=active')])
-      .then(([i, p]) => {
-        setIngredients(i.ingredients)
-        setProducts(p.products)
-      })
+    api('/api/ingredients?status=active')
+      .then((i) => setIngredients(i.ingredients))
       .catch((err) => setError(err.message))
   }, [])
 
   const ingredient = ingredients.find((i) => i.id === form.ingredientId)
-  const product = products.find((p) => p.id === form.productId)
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
@@ -191,15 +185,14 @@ function WasteForm({ onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (kind === 'ingredient' && !form.ingredientId) return setError('Select an ingredient.')
-    if (kind === 'product' && !form.productId) return setError('Select a product.')
+    if (!form.ingredientId) return setError('Select an ingredient.')
     if (!form.quantity || Number(form.quantity) <= 0) return setError('Quantity must be greater than zero.')
 
     setSaving(true)
     try {
       await api('/api/waste', {
         method: 'POST',
-        body: kind === 'ingredient' ? { ...form, productId: undefined } : { ...form, ingredientId: undefined },
+        body: form,
       })
       onSaved()
     } catch (err) {
@@ -211,65 +204,32 @@ function WasteForm({ onClose, onSaved }) {
   return (
     <Modal title="Record Waste" onClose={onClose}>
       <form onSubmit={handleSubmit}>
-        <div className="toolbar" style={{ marginBottom: 16 }}>
-          <button
-            type="button"
-            className={`btn btn--sm ${kind === 'ingredient' ? 'btn--dark' : 'btn--ghost'}`}
-            onClick={() => setKind('ingredient')}
-          >
-            Ingredient
-          </button>
-          <button
-            type="button"
-            className={`btn btn--sm ${kind === 'product' ? 'btn--dark' : 'btn--ghost'}`}
-            onClick={() => setKind('product')}
-          >
-            Prepared product
-          </button>
-        </div>
-
         <div className="form-grid">
-          {kind === 'ingredient' ? (
-            <div className="field field--full">
-              <label className="field__label">Ingredient *</label>
-              <select
-                className="field__control"
-                value={form.ingredientId}
-                onChange={(e) => set('ingredientId', e.target.value)}
-              >
-                <option value="">— select —</option>
-                {ingredients.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.name} (stock: {formatQty(i.currentStockBase, i.displayUnit)})
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div className="field field--full">
-              <label className="field__label">Prepared product *</label>
-              <select
-                className="field__control"
-                value={form.productId}
-                onChange={(e) => set('productId', e.target.value)}
-              >
-                <option value="">— select —</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="field field--full">
+            <label className="field__label">Ingredient *</label>
+            <select
+              className="field__control"
+              value={form.ingredientId}
+              onChange={(e) => set('ingredientId', e.target.value)}
+            >
+              <option value="">— select —</option>
+              {ingredients.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name} (stock: {formatQty(i.currentStockBase, i.displayUnit)})
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="field">
             <label className="field__label">
-              Quantity {kind === 'ingredient' && ingredient ? `(${ingredient.displayUnit})` : kind === 'product' ? '(servings)' : ''}
-              {' '}*
+              Quantity {ingredient ? `(${ingredient.displayUnit})` : ''}{' '}
+              *
             </label>
             <input
               className="field__control"
               type="number"
               min="0"
-              step={kind === 'product' ? '1' : 'any'}
+              step="any"
               value={form.quantity}
               onChange={(e) => set('quantity', e.target.value)}
             />
