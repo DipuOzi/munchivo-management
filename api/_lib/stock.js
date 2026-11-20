@@ -10,7 +10,7 @@
  */
 import { and, desc, eq, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../../src/db/index.js'
-import { sendPushToAll } from '../push/test.js'
+import { sendPushToAll } from '../_handlers/push/test.js'
 
 export const MOVEMENT_TYPES = {
   OPENING: 'opening_stock',
