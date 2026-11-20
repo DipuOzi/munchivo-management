@@ -112,7 +112,7 @@ export default function InventoryPage() {
           {rows.length} ingredient{rows.length === 1 ? '' : 's'} · Inventory value{' '}
           <strong className="money">{formatMoney(totals.value)}</strong>
           {totals.low > 0 && (
-            <> Â· <span className="stock-low">{totals.low} running low</span></>
+            <> · <span className="stock-low">{totals.low} running low</span></>
           )}
         </p>
       </div>
@@ -154,13 +154,13 @@ export default function InventoryPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loadingâ€¦</div>
+          <div className="empty">Loading…</div>
         ) : rows.length === 0 ? (
           <div className="empty">
-            <span className="empty__icon" aria-hidden="true">ðŸ¥”</span>
+            <span className="empty__icon" aria-hidden="true">🥗</span>
             <span className="empty__title">No ingredients yet</span>
             <span className="empty__hint">
-              Add your first ingredient â€” for example Potato with 20 kg and a
+              Add your first ingredient — for example Potato with 20 kg and a
               low-stock threshold of 7 kg.
             </span>
           </div>
@@ -191,13 +191,13 @@ export default function InventoryPage() {
                         <strong>{r.name}</strong>
                         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                           {r.supplierName ? `Supplier: ${r.supplierName}` : 'No supplier'}
-                          {r.trackExpiry ? ' Â· expiry tracked' : ''}
+                          {r.trackExpiry ? ' · expiry tracked' : ''}
                         </div>
                       </td>
                       <td>{r.category}</td>
                       <td className={isLow || isBelowMin ? 'stock-low' : 'stock-ok'}>
                         {formatQty(r.currentStockBase, r.displayUnit)}
-                        {isBelowMin ? ' Â· below min' : isLow ? ' Â· low' : ''}
+                        {isBelowMin ? ' · below min' : isLow ? ' · low' : ''}
                       </td>
                       <td className="money">
                         {formatMoney(r.avgCostPoisha)}/{r.displayUnit}

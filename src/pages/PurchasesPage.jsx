@@ -435,8 +435,8 @@ function PurchaseDetail({ id, onClose, onChanged }) {
       {items.map((it) => (
         <div className="summary-line" key={it.id} style={{ paddingLeft: 12 }}>
           <span style={{ color: 'var(--muted)' }}>
-            {it.ingredientName} · {formatQty(it.quantityBase, it.displayUnit)}
-            {it.expiryDate ? ` · expires ${it.expiryDate}` : ''}
+            {it.ingredientName} - {formatQty(it.quantityBase, it.displayUnit)}
+            {it.expiryDate ? ` - expires ${it.expiryDate}` : ''}
           </span>
           <strong className="money">{formatMoney(it.lineTotalPoisha)}</strong>
         </div>
@@ -453,7 +453,7 @@ function PurchaseDetail({ id, onClose, onChanged }) {
       {payments.map((p) => (
         <div className="summary-line" key={p.id}>
           <span>
-            {p.paidAt} · {p.paymentMethod} {p.recordedBy ? `· ${p.recordedBy}` : ''}
+            {p.paidAt} - {p.paymentMethod} - {p.recordedBy ? ` - ${p.recordedBy}` : ''}
           </span>
           <strong className="money">{formatMoney(p.amountPoisha)}</strong>
         </div>
