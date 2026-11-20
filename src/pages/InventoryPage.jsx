@@ -109,7 +109,7 @@ export default function InventoryPage() {
       <div>
         <h1>Inventory</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          {rows.length} ingredient{rows.length === 1 ? '' : 's'} Â· Inventory value{' '}
+          {rows.length} ingredient{rows.length === 1 ? '' : 's'} · Inventory value{' '}
           <strong className="money">{formatMoney(totals.value)}</strong>
           {totals.low > 0 && (
             <> Â· <span className="stock-low">{totals.low} running low</span></>
@@ -120,7 +120,7 @@ export default function InventoryPage() {
       <div className="toolbar">
         <input
           className="field__control toolbar__search"
-          placeholder="Search ingredientsâ€¦"
+          placeholder="Search ingredients…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

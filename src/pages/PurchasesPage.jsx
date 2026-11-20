@@ -442,7 +442,7 @@ function PurchaseDetail({ id, onClose, onChanged }) {
         </div>
       ))}
       <div className="summary-line summary-line--total">
-        <span>Total {formatMoney(purchase.totalPoisha)} · Paid {formatMoney(purchase.paidPoisha)}</span>
+        <span>Total {formatMoney(purchase.totalPoisha)} {formatMoney(purchase.paidPoisha)}</span>
         <strong className={due > 0 ? 'stock-low money' : 'money'}>
           {due > 0 ? `Due ${formatMoney(due)}` : 'Fully paid'}
         </strong>
