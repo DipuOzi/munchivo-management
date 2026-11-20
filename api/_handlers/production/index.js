@@ -68,48 +68,43 @@ export default async function handler(req, res) {
       .where(eq(schema.recipeItems.recipeId, recipeId))
     if (items.length === 0) {
       return sendJson(res, 400, { error: 'This recipe has no ingredients.' })
-    }
-
-    try {
-      const batch = await db.transaction(async (tx) => {
-        let totalCost = 0
-        for (const item of items) {
-          const need = Math.round(item.quantityBase * factor)
-          if (need <= 0) continue
-          const cogs = await deductStock(tx, {
-            ingredientId: item.ingredientId,
-            quantityBase: need,
-            movementType: MOVEMENT_TYPES.PRODUCTION_CONSUMPTION,
-            userId: user.id,
-            notes: `Production batch (${recipe.name} ×${factor.toFixed(3)})`,
-          })
-          totalCost += cogs
-        }
-
-        const [batch] = await tx
-          .insert(schema.productionBatches)
-          .values({
-            recipeId,
-            productId: productId || null,
-            targetYieldBase,
-            ingredientCostPoisha: totalCost,
-            notes: notes?.trim() || null,
-            createdBy: user.id,
-          })
-          .returning()
-
-        await tx.insert(schema.preparedStock).values({
-          batchId: batch.id,
-          productId: productId || null,
-          recipeId,
-          quantityOriginalBase: targetYieldBase,
-          quantityRemainingBase: targetYieldBase,
-          unitCostPoisha: Math.round(totalCost / targetYieldBase),
+    }    try {
+      let totalCost = 0
+      for (const item of items) {
+        const need = Math.round(item.quantityBase * factor)
+        if (need <= 0) continue
+        const cogs = await deductStock({
+          ingredientId: item.ingredientId,
+          quantityBase: need,
+          movementType: MOVEMENT_TYPES.PRODUCTION_CONSUMPTION,
+          userId: user.id,
+          notes: `Production batch (${recipe.name} ×${factor.toFixed(3)})`,
         })
+        totalCost += cogs
+      }
 
-        return batch
+      const [batch] = await db
+        .insert(schema.productionBatches)
+        .values({
+          recipeId,
+          productId: productId || null,
+          targetYieldBase,
+          ingredientCostPoisha: totalCost,
+          notes: notes?.trim() || null,
+          createdBy: user.id,
+        })
+        .returning()
+
+      await db.insert(schema.preparedStock).values({
+        batchId: batch.id,
+        productId: productId || null,
+        recipeId,
+        quantityOriginalBase: targetYieldBase,
+        quantityRemainingBase: targetYieldBase,
+        unitCostPoisha: Math.round(totalCost / targetYieldBase),
       })
 
+      return sendJson(res, 200, { batch })
     } catch (err) {
       if (err.statusCode) return sendJson(res, err.statusCode, { error: err.message })
       console.error('production error:', err, err.stack)

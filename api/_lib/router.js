@@ -120,22 +120,34 @@ function match(method, pathname) {
 }
 
 /**
- * Recover the real request path. When Vercel forwards /api/foo/1 to this
- * function through the vercel.json rewrite, the path arrives as
- * /api?__route=foo/1; the original query string is preserved. Handlers
- * read filters from `new URL(req.url)`, so req.url is rebuilt to the real
- * path plus the untouched query string.
+ * Recover the real request path.
+ *
+ * Vercel rewrites /api/<path> -> /api?__route=<path>. In that case the
+ * request arrives at this single function as /api (or /api/, /api/index,
+ * /api/index.js) with __route set. Reconstruct the real /api/<path> so
+ * downstream handlers and logging see the original path.
+ *
+ * Also handle the case where __route is set but req.url already contains
+ * the rewritten path (some proxies forward /api?__route=... as well as
+ * /api/<path>?__route=...); in that case we prefer the __route value.
  */
 function resolvePath(req) {
   const url = new URL(req.url || '/', 'http://localhost')
   let pathname = url.pathname
   const forwarded = url.searchParams.get('__route')
-  if (
-    forwarded &&
-    (pathname === '/api' || pathname === '/api/' || pathname === '/api/index' || pathname === '/api/index.js')
-  ) {
-    pathname = `/api/${forwarded.replace(/^\/+/, '')}`
+
+  if (forwarded) {
+    // If the request came through the Vercel rewrite, reconstruct the
+    // real /api/<forwarded> path unless the request already points at a
+    // concrete /api/<path> route.
+    const rewrittenShapes = ['/api', '/api/', '/api/index', '/api/index.js']
+    if (rewrittenShapes.includes(pathname) || pathname.endsWith('/api')) {
+      pathname = `/api/${forwarded.replace(/^\/+/, '')}`
+    } else if (!pathname.startsWith('/api/') && !pathname.startsWith('/api')) {
+      pathname = `/api/${forwarded.replace(/^\/+/, '')}`
+    }
   }
+
   url.searchParams.delete('__route')
   const query = url.searchParams.toString()
   req.url = pathname + (query ? `?${query}` : '')
@@ -160,6 +172,7 @@ export async function dispatch(req, res) {
     if (!res.headersSent) {
       sendJson(res, 500, { error: 'Internal server error.' })
     } else if (!res.writableEnded) {
+      // Give handlers that already wrote headers a chance to finish.
       res.end()
     }
   }

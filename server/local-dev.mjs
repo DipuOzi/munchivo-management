@@ -36,8 +36,10 @@ const server = createServer(async (req, res) => {
     console.error(`[api] ${url.pathname} failed:`, err)
     if (!res.headersSent) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Internal server error.' }))
+    } else if (!res.writableEnded) {
+      res.end()
     }
-    res.end(JSON.stringify({ error: 'Internal server error.' }))
   }
 })
 

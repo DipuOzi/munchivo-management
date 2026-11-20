@@ -6,7 +6,7 @@ import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm'
 import { db, schema } from '../../../src/db/index.js'
 import { readJson, sendJson } from '../../_lib/http.js'
 import { withAuth } from '../../_lib/guard.js'
-import { toBase, takaToPoisha, unitTypeFor } from '../../../src/shared/units.js'
+import { toBase, takaToPoisha } from '../../../src/shared/units.js'
 
 export default async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) {
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
     const displayUnit = (body.displayUnit || '').trim()
     if (!displayUnit) return sendJson(res, 400, { error: 'Unit is required.' })
 
-    const unitType = unitTypeFor(displayUnit)
+    const unitType = (() => { const u = displayUnit?.toLowerCase().trim(); return ['g','gram','grams','kg','kilogram','kilograms','lb','lbs','ounce','ounces','ml','millilitre','millilitres','milliliter','milliliters','l','L','litre','litres','liter','liters','cup','cups','tbsp','tsp','gal','galon','galons','pcs','piece','pieces','unit','units','each','box','boxes','packet','packets','bottle','bottles'].includes(u) ? (u === 'l' || u === 'L' ? 'volume' : u.endsWith('ml') || u === 'millilitre' || u === 'millilitres' || u === 'milliliter' || u === 'milliliters' || u === 'litre' || u === 'litres' || u === 'liter' || u === 'liters' || u === 'cup' || u === 'cups' || u === 'tbsp' || u === 'tsp' || u === 'gal' || u === 'galon' || u === 'galons' ? 'volume' : 'mass') : 'other'; })()
     const initialQty = toBase(body.initialQuantity || 0, displayUnit)
     if (initialQty < 0) return sendJson(res, 400, { error: 'Initial quantity cannot be negative.' })
 

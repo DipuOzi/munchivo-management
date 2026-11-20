@@ -19,8 +19,47 @@ import { db, schema } from '../../../src/db/index.js'
 import { sendJson } from '../../_lib/http.js'
 import { getBusinessSettings } from '../../_lib/settings.js'
 import { checkLowStockTx } from '../../_lib/stock.js'
-import { sendPushToAll } from '../push/test.js'
 import { formatQty } from '../../../src/shared/units.js'
+
+async function sendPushToAll(payload) {
+  try {
+    const webPush = await import('web-push')
+    webPush.setVapidDetails(
+      process.env.VAPID_SUBJECT || 'mailto:hello@munchivo.com',
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY,
+    )
+    const subs = await db
+      .select()
+      .from(schema.pushSubscriptions)
+      .where(eq(schema.pushSubscriptions.isActive, true))
+    const jobs = subs.map((sub) =>
+      (async () => {
+        try {
+          await webPush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dhKey,
+                auth: sub.authKey,
+              },
+              ...payload,
+            },
+          )
+          await db
+            .update(schema.pushSubscriptions)
+            .set({ failureCount: 0, lastSuccessAt: new Date() })
+            .where(eq(schema.pushSubscriptions.id, sub.id))
+        } catch {
+          // Best effort; never crash the cron job.
+        }
+      })(),
+    )
+    await Promise.allSettled(jobs)
+  } catch {
+    // Push is best effort and must never crash the cron job.
+  }
+}
 
 function isAuthorized(req) {
   const secret = process.env.CRON_SECRET

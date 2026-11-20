@@ -10,7 +10,6 @@
  */
 import { and, desc, eq, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../../src/db/index.js'
-import { sendPushToAll } from '../_handlers/push/test.js'
 
 export const MOVEMENT_TYPES = {
   OPENING: 'opening_stock',
@@ -156,13 +155,8 @@ export async function checkLowStockTx(tx, ingredient) {
         entityId: ingredient.id,
       })
       .returning()
-    // Fire-and-forget browser push (best effort, never blocks the tx).
-    sendPushToAll({
-      title: notification.title,
-      body: notification.body,
-      url: '/notifications',
-      tag: `low-stock-${ingredient.id}`,
-    }).catch(() => {})
+    // Push is dispatched by the notification layer outside the stock
+    // transaction, so stock mutations never depend on the push provider.
     return notification
   }
 

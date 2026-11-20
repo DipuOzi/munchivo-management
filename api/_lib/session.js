@@ -45,32 +45,48 @@ function parseCookies(req) {
 
 export function setSessionCookie(res, token, req) {
   const secure = isSecureRequest(req)
-  res.setHeader(
-    'Set-Cookie',
-    [
-      `${SESSION_COOKIE}=${encodeURIComponent(token)}`,
-      'Path=/',
-      'HttpOnly',
-      'SameSite=Lax',
-      `Max-Age=${SESSION_TTL_SEC}`,
-      ...(secure ? ['Secure'] : []),
-    ].join('; '),
-  )
+  const parts = [
+    `${SESSION_COOKIE}=${encodeURIComponent(token)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    `Max-Age=${SESSION_TTL_SEC}`,
+    ...(secure ? ['Secure'] : []),
+  ]
+  const value = parts.join('; ')
+  if (typeof res.setHeader === 'function') {
+    res.setHeader('Set-Cookie', value)
+  } else if (typeof res.headers === 'object' && res.headers) {
+    const existing = Array.isArray(res.headers['set-cookie'])
+      ? res.headers['set-cookie']
+      : res.headers['set-cookie']
+        ? [res.headers['set-cookie']]
+        : []
+    res.headers['set-cookie'] = [...existing, value]
+  }
 }
 
 export function clearSessionCookie(res, req) {
   const secure = isSecureRequest(req)
-  res.setHeader(
-    'Set-Cookie',
-    [
-      `${SESSION_COOKIE}=`,
-      'Path=/',
-      'HttpOnly',
-      'SameSite=Lax',
-      'Max-Age=0',
-      ...(secure ? ['Secure'] : []),
-    ].join('; '),
-  )
+  const parts = [
+    `${SESSION_COOKIE}=`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    'Max-Age=0',
+    ...(secure ? ['Secure'] : []),
+  ]
+  const value = parts.join('; ')
+  if (typeof res.setHeader === 'function') {
+    res.setHeader('Set-Cookie', value)
+  } else if (typeof res.headers === 'object' && res.headers) {
+    const existing = Array.isArray(res.headers['set-cookie'])
+      ? res.headers['set-cookie']
+      : res.headers['set-cookie']
+        ? [res.headers['set-cookie']]
+        : []
+    res.headers['set-cookie'] = [...existing, value]
+  }
 }
 
 /**
