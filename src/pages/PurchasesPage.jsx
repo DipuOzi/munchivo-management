@@ -208,12 +208,19 @@ function PurchaseForm({ ingredients, suppliers, onClose, onSaved }) {
 
     setSaving(true)
     try {
+      const payloadItems = validItems.map((it) => ({
+        ingredientId: it.ingredientId,
+        quantity: Number(it.quantity),
+        lineTotal: Number(it.lineTotal),
+        expiryDate: it.expiryDate || null,
+        displayUnit: selectedIng(it)?.displayUnit,
+      }))
       await api('/api/purchases', {
         method: 'POST',
         body: {
           ...form,
           initialPaid: form.initialPaid || 0,
-          items: validItems,
+          items: payloadItems,
         },
       })
       onSaved()

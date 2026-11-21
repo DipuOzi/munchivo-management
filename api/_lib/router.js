@@ -61,6 +61,7 @@ const routes = [
   ['DELETE', '/api/waste/:id', () => import('../_handlers/waste/[id].js')],
   ['GET', '/api/expiry', () => import('../_handlers/expiry.js')],
   ['GET', '/api/dashboard', () => import('../_handlers/dashboard.js')],
+  ['GET', '/api/overview', () => import('../_handlers/overview.js')],
   ['GET', '/api/notifications', () => import('../_handlers/notifications.js')],
   ['POST', '/api/notifications', () => import('../_handlers/notifications.js')],
   ['GET', '/api/push/vapid-public', () => import('../_handlers/push/vapid-public.js')],

@@ -5,7 +5,10 @@ import logoUrl from '/images/munchivo-logo.svg'
 const NAV_SECTIONS = [
   {
     label: 'Overview',
-    items: [{ to: '/', label: 'Dashboard', icon: 'grid', end: true }],
+    items: [
+      { to: '/', label: 'Dashboard', icon: 'grid', end: true },
+      { to: '/overview', label: 'Sales Overview', icon: 'cash' },
+    ],
   },
   {
     label: 'Operations',
