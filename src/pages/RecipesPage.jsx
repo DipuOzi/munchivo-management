@@ -6,17 +6,18 @@ import Modal from '../components/ui/Modal.jsx'
 import IngredientForm from '../components/IngredientForm.jsx'
 
 const YIELD_UNITS = ['g', 'kg', 'ml', 'L', 'pcs']
-const DEFAULT_ITEM_UNITS = ['g', 'kg', 'ml', 'L', 'pcs', 'slice']
+const DEFAULT_ITEM_UNITS = ['g', 'kg', 'ml', 'L', 'pcs', 'slice', 'loaf']
 
 // Units offered for an ingredient's quantity, based on what it measures.
-// e.g. salt (mass) → g, kg ; bread (count) → pcs, slice.
+// e.g. salt (mass) → g, kg ; bread (count) → pcs, slice, loaf
+// (1 loaf = 10 slices, so 1 slice = 1 base unit and 1 loaf = 10).
 function unitsForIngredient(ing) {
   if (!ing) return DEFAULT_ITEM_UNITS
   const type = unitTypeFor(ing.displayUnit)
   let opts
   if (type === 'mass') opts = ['g', 'kg']
   else if (type === 'volume') opts = ['ml', 'L']
-  else if (type === 'count') opts = ['pcs', 'slice']
+  else if (type === 'count') opts = ['pcs', 'slice', 'loaf']
   else opts = ['pcs']
   if (ing.displayUnit && !opts.includes(ing.displayUnit)) opts = [ing.displayUnit, ...opts]
   return opts
