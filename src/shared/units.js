@@ -10,6 +10,8 @@ export const DISPLAY_UNITS = [
   'L',
   'ml',
   'pcs',
+  'loaf',
+  'slice',
   'Packet',
   'Bottle',
   'Box',

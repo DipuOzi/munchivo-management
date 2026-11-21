@@ -102,7 +102,7 @@ export default function IngredientForm({ ingredient, onClose, onSaved }) {
               value={form.displayUnit}
               onChange={(e) => set('displayUnit', e.target.value)}
             >
-              {['kg', 'g', 'L', 'ml', 'pcs', 'Packet', 'Bottle', 'Box'].map((u) => (
+              {['kg', 'g', 'L', 'ml', 'pcs', 'loaf', 'slice', 'Packet', 'Bottle', 'Box'].map((u) => (
                 <option key={u} value={u}>
                   {u}
                 </option>
