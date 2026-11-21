@@ -5,49 +5,36 @@ import { formatMoney } from '../shared/units.js'
 /**
  * SALES OVERVIEW — daily / monthly / yearly / lifetime sales performance.
  * Everything is computed live from recorded sales, so nothing has to be
- * reset manually: the "Today" card rolls over automatically at midnight,
- * while the database keeps the full history for the other periods.
+ * reset manually: the "Today" column rolls over automatically at midnight,
+ * while the database keeps the full history for the other columns.
  */
-const PERIOD_ORDER = ['daily', 'monthly', 'yearly', 'lifetime']
-const PERIOD_ICON = {
-  daily: '◷',
-  monthly: '▦',
-  yearly: '📅',
-  lifetime: '∞',
+const COLS = ['daily', 'monthly', 'yearly', 'lifetime']
+const COL_LABEL = {
+  daily: 'Today',
+  monthly: 'This month',
+  yearly: 'This year',
+  lifetime: 'All time',
 }
 
-function PeriodCard({ period }) {
-  return (
-    <div className="card stat-card">
-      <div className="stat-card__top">
-        <span className="stat-card__label">{period.label}</span>
-        <span className="stat-card__icon stat-card__icon--profit" aria-hidden="true">
-          {PERIOD_ICON[period.key] || '•'}
-        </span>
-      </div>
-      <div>
-        <div className="stat-card__label">Profit</div>
-        <span className="stat-card__value money">{formatMoney(period.profitPoisha)}</span>
-      </div>
-      <div className="summary-line">
-        <span>Revenue</span>
-        <strong className="money">{formatMoney(period.revenuePoisha)}</strong>
-      </div>
-      <div className="summary-line">
-        <span>Cost (COGS)</span>
-        <strong className="money">{formatMoney(period.cogsPoisha)}</strong>
-      </div>
-      <div className="summary-line">
-        <span>Orders</span>
-        <strong>{period.orders}</strong>
-      </div>
-      <div className="summary-line">
-        <span>Items sold</span>
-        <strong>{period.items}</strong>
-      </div>
-      <span className="stat-card__hint">{period.period}</span>
-    </div>
-  )
+function formatPeriod(key, raw) {
+  if (!raw || key === 'lifetime') return 'Since the beginning'
+  if (key === 'yearly') return raw
+  const parts = raw.split('-').map(Number)
+  if (key === 'monthly') {
+    return new Date(parts[0], parts[1] - 1, 1).toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    })
+  }
+  return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function profitClass(value) {
+  return value < 0 ? 'value-negative' : 'value-profit'
 }
 
 export default function OverviewPage() {
@@ -95,32 +82,90 @@ export default function OverviewPage() {
     )
   }
 
-  const today = data.periods.daily
+  const { periods, todayItems } = data
+  const today = periods.daily
 
   return (
     <>
       <div>
         <h1>Sales Overview</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Live sales, cost and profit. Today resets automatically at midnight —
-          the database keeps every record for the month, year and all-time totals.
+          Revenue, cost and profit at a glance. Today updates automatically and
+          resets at midnight — every record stays saved for the month, year and
+          all-time totals.
         </p>
       </div>
 
-      <div className="stat-grid">
-        {PERIOD_ORDER.map((key) => (
-          <PeriodCard key={key} period={data.periods[key]} />
-        ))}
+      <div className="card">
+        <div className="card__title">
+          <h3>Sales performance</h3>
+        </div>
+        <div className="table-wrap">
+          <table className="table overview-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                {COLS.map((key) => (
+                  <th key={key}>
+                    {COL_LABEL[key]}
+                    <span className="th-period">{formatPeriod(key, periods[key].period)}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="row-label">Revenue</td>
+                {COLS.map((key) => (
+                  <td key={key} className="money">{formatMoney(periods[key].revenuePoisha)}</td>
+                ))}
+              </tr>
+              <tr>
+                <td className="row-label">Cost of goods</td>
+                {COLS.map((key) => (
+                  <td key={key} className="money">{formatMoney(periods[key].cogsPoisha)}</td>
+                ))}
+              </tr>
+              <tr className="row-profit">
+                <td className="row-label">Profit</td>
+                {COLS.map((key) => (
+                  <td
+                    key={key}
+                    className={`money ${profitClass(periods[key].profitPoisha)}`}
+                  >
+                    {formatMoney(periods[key].profitPoisha)}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td className="row-label">Orders</td>
+                {COLS.map((key) => (
+                  <td key={key}>{periods[key].orders}</td>
+                ))}
+              </tr>
+              <tr>
+                <td className="row-label">Items sold</td>
+                {COLS.map((key) => (
+                  <td key={key}>{periods[key].items}</td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="overview-note">
+          <span className="overview-note__dot" aria-hidden="true" />
+          Live totals from recorded sales · cancelled sales are excluded
+        </div>
       </div>
 
-      <div className="card card--flush" style={{ marginTop: 20 }}>
-        <div className="card__title" style={{ padding: '0 16px' }}>
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card__title">
           <h3>Sold today</h3>
           <span className="badge badge--neutral">
             {today.orders} order{today.orders === 1 ? '' : 's'}
           </span>
         </div>
-        {data.todayItems.length === 0 ? (
+        {todayItems.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🧾</span>
             <span className="empty__title">Nothing sold today yet</span>
@@ -130,7 +175,7 @@ export default function OverviewPage() {
           </div>
         ) : (
           <div className="table-wrap">
-            <table className="table">
+            <table className="table overview-table">
               <thead>
                 <tr>
                   <th>Product</th>
@@ -141,23 +186,27 @@ export default function OverviewPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.todayItems.map((it) => (
+                {todayItems.map((it) => (
                   <tr key={it.productName}>
-                    <td><strong>{it.productName}</strong></td>
+                    <td className="row-label">{it.productName}</td>
                     <td>{it.quantity}</td>
                     <td className="money">{formatMoney(it.revenuePoisha)}</td>
                     <td className="money">{formatMoney(it.cogsPoisha)}</td>
-                    <td className="money">{formatMoney(it.profitPoisha)}</td>
+                    <td className={`money ${profitClass(it.profitPoisha)}`}>
+                      {formatMoney(it.profitPoisha)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
-                  <td><strong>Total</strong></td>
-                  <td><strong>{today.items}</strong></td>
-                  <td className="money"><strong>{formatMoney(today.revenuePoisha)}</strong></td>
-                  <td className="money"><strong>{formatMoney(today.cogsPoisha)}</strong></td>
-                  <td className="money"><strong>{formatMoney(today.profitPoisha)}</strong></td>
+                  <td>Total</td>
+                  <td>{today.items}</td>
+                  <td className="money">{formatMoney(today.revenuePoisha)}</td>
+                  <td className="money">{formatMoney(today.cogsPoisha)}</td>
+                  <td className={`money ${profitClass(today.profitPoisha)}`}>
+                    {formatMoney(today.profitPoisha)}
+                  </td>
                 </tr>
               </tfoot>
             </table>

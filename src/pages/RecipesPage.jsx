@@ -1,14 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
-import { formatMoney, formatQty, toBase, fromBase, takaToPoisha } from '../shared/units.js'
+import { formatMoney, formatQty, toBase, fromBase, takaToPoisha, unitTypeFor } from '../shared/units.js'
 import { recipeCosting } from '../shared/costing.js'
 import Modal from '../components/ui/Modal.jsx'
 import IngredientForm from '../components/IngredientForm.jsx'
 
 const YIELD_UNITS = ['g', 'kg', 'ml', 'L', 'pcs']
+const DEFAULT_ITEM_UNITS = ['g', 'kg', 'ml', 'L', 'pcs', 'slice']
+
+// Units offered for an ingredient's quantity, based on what it measures.
+// e.g. salt (mass) → g, kg ; bread (count) → pcs, slice.
+function unitsForIngredient(ing) {
+  if (!ing) return DEFAULT_ITEM_UNITS
+  const type = unitTypeFor(ing.displayUnit)
+  let opts
+  if (type === 'mass') opts = ['g', 'kg']
+  else if (type === 'volume') opts = ['ml', 'L']
+  else if (type === 'count') opts = ['pcs', 'slice']
+  else opts = ['pcs']
+  if (ing.displayUnit && !opts.includes(ing.displayUnit)) opts = [ing.displayUnit, ...opts]
+  return opts
+}
 
 function blankItem() {
-  return { ingredientId: '', quantity: '' }
+  return { ingredientId: '', quantity: '', unit: '' }
 }
 
 export default function RecipesPage() {
@@ -212,6 +227,7 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
     return recipe.items.map((it) => ({
       ingredientId: it.ingredientId,
       quantity: String(fromBase(it.quantityBase, it.ingredient.displayUnit)),
+      unit: it.ingredient.displayUnit,
     }))
   })
   const [newIngOpen, setNewIngOpen] = useState(false)
@@ -238,7 +254,7 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
         return {
           ingredientId: ing.id,
           ingredient: { avgCostPoisha: ing.avgCostPoisha },
-          quantityBase: toBase(it.quantity, ing.displayUnit),
+          quantityBase: toBase(it.quantity, it.unit || ing.displayUnit),
         }
       })
       .filter(Boolean)
@@ -261,11 +277,11 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
     for (const it of items) {
       const ing = ingById(it.ingredientId)
       if (!ing) continue
-      const qtyBase = toBase(it.quantity || 0, ing.displayUnit)
-      if (qtyBase <= 0) return setError('Every ingredient needs a quantity greater than zero.')
+      const qtyBase = toBase(it.quantity || 0, it.unit || ing.displayUnit)
+      if (qtyBase <= 0) continue
       payloadItems.push({ ingredientId: ing.id, quantityBase: qtyBase })
     }
-    if (payloadItems.length === 0) return setError('Add at least one ingredient.')
+    if (payloadItems.length === 0) return setError('Add at least one ingredient with a quantity.')
 
     setSaving(true)
     try {
@@ -348,7 +364,7 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
           {items.map((it, idx) => {
             const ing = ingById(it.ingredientId)
             return (
-              <div className="item-row" key={idx} style={{ gridTemplateColumns: '1.5fr 0.8fr auto' }}>
+              <div className="item-row" key={idx} style={{ gridTemplateColumns: '1.4fr 0.7fr 0.8fr auto' }}>
                 <div className="field">
                   <label className="field__label">Ingredient</label>
                   <select
@@ -359,7 +375,14 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
                         setNewIngOpen(true)
                         return
                       }
-                      setItem(idx, 'ingredientId', e.target.value)
+                      const ing = ingById(e.target.value)
+                      setItems((list) =>
+                        list.map((row, i) =>
+                          i === idx
+                            ? { ...row, ingredientId: e.target.value, unit: ing ? ing.displayUnit : '' }
+                            : row,
+                        ),
+                      )
                     }}
                   >
                     <option value="">— select —</option>
@@ -372,15 +395,31 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
                   </select>
                 </div>
                 <div className="field">
-                  <label className="field__label">Qty ({ing ? ing.displayUnit : 'unit'})</label>
+                  <label className="field__label">Qty</label>
                   <input
                     className="field__control"
                     type="number"
                     min="0"
                     step="any"
+                    placeholder="0"
                     value={it.quantity}
                     onChange={(e) => setItem(idx, 'quantity', e.target.value)}
                   />
+                </div>
+                <div className="field">
+                  <label className="field__label">Unit</label>
+                  <select
+                    className="field__control"
+                    value={it.unit || ''}
+                    onChange={(e) => setItem(idx, 'unit', e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {unitsForIngredient(ing).map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <button
                   type="button"

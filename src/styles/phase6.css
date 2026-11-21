@@ -330,3 +330,79 @@
     border: 1px solid #ccc;
   }
 }
+
+/* ============================================================
+   SALES OVERVIEW
+   ============================================================ */
+.overview-table th:not(:first-child),
+.overview-table td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-table th {
+  vertical-align: bottom;
+}
+
+.overview-table .th-period {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.overview-table .row-label {
+  font-weight: 600;
+  color: var(--dark-soft);
+  white-space: nowrap;
+}
+
+.overview-table .row-profit td {
+  font-weight: 700;
+  border-top: 2px solid var(--line);
+}
+
+.overview-table .row-profit .row-label {
+  font-family: var(--font-display);
+  color: var(--dark);
+}
+
+.overview-table .value-profit {
+  color: var(--success);
+}
+
+.overview-table .value-negative {
+  color: var(--danger);
+}
+
+.overview-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid var(--line);
+  background: var(--surface-alt);
+  padding: 14px 16px;
+}
+
+.overview-table tfoot td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.overview-note__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
