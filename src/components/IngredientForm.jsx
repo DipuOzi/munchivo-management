@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import Modal from './ui/Modal.jsx'
 
 /**
@@ -7,6 +8,7 @@ import Modal from './ui/Modal.jsx'
  * inline from the Recipe builder ("create ingredient on the fly").
  */
 export default function IngredientForm({ ingredient, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState(() => {
     if (!ingredient) {
       return {
@@ -43,8 +45,8 @@ export default function IngredientForm({ ingredient, onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!form.name.trim()) return setError('Ingredient name is required.')
-    if (!form.displayUnit) return setError('Unit is required.')
+    if (!form.name.trim()) return setError(t('Ingredient name is required.'))
+    if (!form.displayUnit) return setError(t('Unit is required.'))
 
     const payload = {
       name: form.name,
@@ -74,29 +76,33 @@ export default function IngredientForm({ ingredient, onClose, onSaved }) {
   }
 
   return (
-    <Modal title={ingredient ? `Edit ${ingredient.name}` : 'New Ingredient'} onClose={onClose} wide>
+    <Modal
+      title={ingredient ? t('Edit {name}', { name: ingredient.name }) : t('New Ingredient')}
+      onClose={onClose}
+      wide
+    >
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field field--full">
-            <label className="field__label">Ingredient name *</label>
+            <label className="field__label">{t('Ingredient name *')}</label>
             <input
               className="field__control"
-              placeholder="e.g. Potato"
+              placeholder={t('e.g. Potato')}
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
             />
           </div>
           <div className="field">
-            <label className="field__label">Category</label>
+            <label className="field__label">{t('Category')}</label>
             <input
               className="field__control"
-              placeholder="e.g. Vegetables"
+              placeholder={t('e.g. Vegetables')}
               value={form.category}
               onChange={(e) => set('category', e.target.value)}
             />
           </div>
           <div className="field">
-            <label className="field__label">Unit *</label>
+            <label className="field__label">{t('Unit *')}</label>
             <select
               className="field__control"
               value={form.displayUnit}
@@ -113,25 +119,27 @@ export default function IngredientForm({ ingredient, onClose, onSaved }) {
           {!ingredient && (
             <>
               <div className="field">
-                <label className="field__label">Initial quantity ({form.displayUnit})</label>
+                <label className="field__label">
+                  {t('Initial quantity ({unit})', { unit: form.displayUnit })}
+                </label>
                 <input
                   className="field__control"
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="e.g. 20"
+                  placeholder={t('e.g. 20')}
                   value={form.initialQuantity}
                   onChange={(e) => set('initialQuantity', e.target.value)}
                 />
               </div>
               <div className="field">
-                <label className="field__label">Total purchase price (৳)</label>
+                <label className="field__label">{t('Total purchase price (৳)')}</label>
                 <input
                   className="field__control"
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="e.g. 1000"
+                  placeholder={t('e.g. 1000')}
                   value={form.initialTotalCost}
                   onChange={(e) => set('initialTotalCost', e.target.value)}
                 />
@@ -140,34 +148,38 @@ export default function IngredientForm({ ingredient, onClose, onSaved }) {
           )}
 
           <div className="field">
-            <label className="field__label">Low-stock threshold ({form.displayUnit})</label>
+            <label className="field__label">
+              {t('Low-stock threshold ({unit})', { unit: form.displayUnit })}
+            </label>
             <input
               className="field__control"
               type="number"
               min="0"
               step="any"
-              placeholder="e.g. 7"
+              placeholder={t('e.g. 7')}
               value={form.lowStockThreshold}
               onChange={(e) => set('lowStockThreshold', e.target.value)}
             />
           </div>
           <div className="field">
-            <label className="field__label">Minimum stock ({form.displayUnit})</label>
+            <label className="field__label">
+              {t('Minimum stock ({unit})', { unit: form.displayUnit })}
+            </label>
             <input
               className="field__control"
               type="number"
               min="0"
               step="any"
-              placeholder="e.g. 5"
+              placeholder={t('e.g. 5')}
               value={form.minStock}
               onChange={(e) => set('minStock', e.target.value)}
             />
           </div>
           <div className="field">
-            <label className="field__label">Storage location</label>
+            <label className="field__label">{t('Storage location')}</label>
             <input
               className="field__control"
-              placeholder="e.g. Cold storage, shelf 2"
+              placeholder={t('e.g. Cold storage, shelf 2')}
               value={form.storageLocation}
               onChange={(e) => set('storageLocation', e.target.value)}
             />
@@ -179,11 +191,11 @@ export default function IngredientForm({ ingredient, onClose, onSaved }) {
                 checked={form.trackExpiry}
                 onChange={(e) => set('trackExpiry', e.target.checked)}
               />
-              Track expiry for this ingredient
+              {t('Track expiry for this ingredient')}
             </label>
           </div>
           <div className="field field--full">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <textarea
               className="field__control"
               rows="2"
@@ -197,10 +209,14 @@ export default function IngredientForm({ ingredient, onClose, onSaved }) {
 
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : ingredient ? 'Save changes' : 'Add ingredient'}
+            {saving
+              ? t('Saving…')
+              : ingredient
+                ? t('Save changes')
+                : t('Add ingredient')}
           </button>
         </div>
       </form>

@@ -62,3 +62,11 @@
   --space-10: 40px;
   --space-12: 48px;
 }
+
+/* Bangla uses its own script — swap the display/body fonts so nothing falls
+   back to a CJK or serif default. The toggle sets <html lang="bn">. */
+html[lang='bn'] {
+  --font-display: 'Noto Sans Bengali', 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Noto Sans Bengali', 'DM Sans', sans-serif;
+  --font-accent: 'Noto Sans Bengali', 'Instrument Serif', serif;
+}

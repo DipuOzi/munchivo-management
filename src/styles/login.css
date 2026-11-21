@@ -55,6 +55,12 @@
   gap: var(--space-5);
 }
 
+.login__lang {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
 .login__brand {
   display: flex;
   flex-direction: column;

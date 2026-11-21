@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatDate } from '../shared/dates.js'
 
 const TABS = [
@@ -28,6 +29,7 @@ const ROLE_LABEL = {
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const { user, refreshUser } = useAuth()
   const [tab, setTab] = useState('profile')
   const [data, setData] = useState(null)
@@ -60,36 +62,36 @@ export default function SettingsPage() {
   return (
     <>
       <div>
-        <h1>Settings</h1>
+        <h1>{t('Settings')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Manage your account, business details and alert preferences.
+          {t('Manage your account, business details and alert preferences.')}
         </p>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
       {notice && <div className="alert alert--success">{notice}</div>}
 
-      <div className="settings-tabs" role="tablist" aria-label="Settings sections">
-        {TABS.map((t) => (
+      <div className="settings-tabs" role="tablist" aria-label={t('Settings sections')}>
+        {TABS.map((item) => (
           <button
-            key={t.id}
+            key={item.id}
             type="button"
             role="tab"
-            aria-selected={tab === t.id}
-            className={`settings-tabs__btn${tab === t.id ? ' is-active' : ''}`}
+            aria-selected={tab === item.id}
+            className={`settings-tabs__btn${tab === item.id ? ' is-active' : ''}`}
             onClick={() => {
-              setTab(t.id)
+              setTab(item.id)
               setError('')
             }}
           >
-            {t.label}
+            {t(item.label)}
           </button>
         ))}
       </div>
 
       {loading || !data ? (
         <div className="card">
-          <div className="empty">Loading settings…</div>
+          <div className="empty">{t('Loading settings…')}</div>
         </div>
       ) : (
         <>
@@ -118,7 +120,7 @@ export default function SettingsPage() {
 
           {tab === 'password' && (
             <PasswordForm
-              onSaved={() => flash('Password updated. Other devices were signed out.')}
+              onSaved={() => flash(t('Password updated. Other devices were signed out.'))}
               onError={setError}
             />
           )}
@@ -132,6 +134,7 @@ export default function SettingsPage() {
 
 /* ------------------------------------------------------------------ */
 function ProfileForm({ profile, onSaved, onError }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     name: profile.name || '',
     email: profile.email || '',
@@ -145,14 +148,14 @@ function ProfileForm({ profile, onSaved, onError }) {
   async function handleSubmit(e) {
     e.preventDefault()
     onError('')
-    if (!form.name.trim()) return onError('Name is required.')
+    if (!form.name.trim()) return onError(t('Name is required.'))
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-      return onError('Enter a valid email address.')
+      return onError(t('Enter a valid email address.'))
     }
     setSaving(true)
     try {
       await api('/api/settings/profile', { method: 'PATCH', body: form })
-      await onSaved('Profile updated.')
+      await onSaved(t('Profile updated.'))
     } catch (err) {
       onError(err.message)
     } finally {
@@ -163,16 +166,16 @@ function ProfileForm({ profile, onSaved, onError }) {
   return (
     <div className="card">
       <div className="card__title">
-        <h3>Your profile</h3>
+        <h3>{t('Your profile')}</h3>
         <span className="badge badge--neutral">
-          {ROLE_LABEL[profile.role] || profile.role || 'Owner'}
+          {t(ROLE_LABEL[profile.role] || profile.role || 'Owner')}
         </span>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field">
-            <label className="field__label">Full name *</label>
+            <label className="field__label">{t('Full name *')}</label>
             <input
               className="field__control"
               value={form.name}
@@ -180,7 +183,7 @@ function ProfileForm({ profile, onSaved, onError }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Email address *</label>
+            <label className="field__label">{t('Email address *')}</label>
             <input
               className="field__control"
               type="email"
@@ -190,15 +193,16 @@ function ProfileForm({ profile, onSaved, onError }) {
           </div>
           <div className="field field--full">
             <p className="settings-hint">
-              This email is used to sign in. Changing it takes effect immediately;
-              your current session stays active.
+              {t(
+                'This email is used to sign in. Changing it takes effect immediately; your current session stays active.',
+              )}
             </p>
           </div>
         </div>
 
         <div className="modal__actions">
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Save profile'}
+            {saving ? t('Saving…') : t('Save profile')}
           </button>
         </div>
       </form>
@@ -208,6 +212,7 @@ function ProfileForm({ profile, onSaved, onError }) {
 
 /* ------------------------------------------------------------------ */
 function BusinessForm({ business, onSaved, onError }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     businessName: business.businessName || '',
     legalName: business.legalName || '',
@@ -226,10 +231,10 @@ function BusinessForm({ business, onSaved, onError }) {
   async function handleSubmit(e) {
     e.preventDefault()
     onError('')
-    if (!form.businessName.trim()) return onError('Business name is required.')
+    if (!form.businessName.trim()) return onError(t('Business name is required.'))
     const days = Number(form.expiryAlertDays)
     if (!Number.isInteger(days) || days < 1 || days > 60) {
-      return onError('Expiry alert days must be between 1 and 60.')
+      return onError(t('Expiry alert days must be between 1 and 60.'))
     }
     setSaving(true)
     try {
@@ -237,7 +242,7 @@ function BusinessForm({ business, onSaved, onError }) {
         method: 'PATCH',
         body: { ...form, expiryAlertDays: days },
       })
-      await onSaved('Business settings saved.')
+      await onSaved(t('Business settings saved.'))
     } catch (err) {
       onError(err.message)
     } finally {
@@ -248,14 +253,14 @@ function BusinessForm({ business, onSaved, onError }) {
   return (
     <div className="card">
       <div className="card__title">
-        <h3>Business details</h3>
+        <h3>{t('Business details')}</h3>
         <span className="badge badge--neutral">BDT · ৳</span>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field">
-            <label className="field__label">Business name *</label>
+            <label className="field__label">{t('Business name *')}</label>
             <input
               className="field__control"
               value={form.businessName}
@@ -263,7 +268,7 @@ function BusinessForm({ business, onSaved, onError }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Legal / registered name</label>
+            <label className="field__label">{t('Legal / registered name')}</label>
             <input
               className="field__control"
               value={form.legalName}
@@ -271,7 +276,7 @@ function BusinessForm({ business, onSaved, onError }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Phone</label>
+            <label className="field__label">{t('Phone')}</label>
             <input
               className="field__control"
               value={form.phone}
@@ -280,7 +285,7 @@ function BusinessForm({ business, onSaved, onError }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Timezone</label>
+            <label className="field__label">{t('Timezone')}</label>
             <select
               className="field__control"
               value={form.timezone}
@@ -292,7 +297,7 @@ function BusinessForm({ business, onSaved, onError }) {
             </select>
           </div>
           <div className="field field--full">
-            <label className="field__label">Address</label>
+            <label className="field__label">{t('Address')}</label>
             <textarea
               className="field__control"
               rows="2"
@@ -301,7 +306,7 @@ function BusinessForm({ business, onSaved, onError }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Expiry alert window (days)</label>
+            <label className="field__label">{t('Expiry alert window (days)')}</label>
             <input
               className="field__control"
               type="number"
@@ -312,28 +317,29 @@ function BusinessForm({ business, onSaved, onError }) {
               onChange={(e) => set('expiryAlertDays', e.target.value)}
             />
             <p className="settings-hint">
-              Stock is flagged when it expires within this many days. Used by
-              the dashboard, expiry page and the daily alert job.
+              {t(
+                'Stock is flagged when it expires within this many days. Used by the dashboard, expiry page and the daily alert job.',
+              )}
             </p>
           </div>
           <div className="field">
-            <label className="field__label">Currency</label>
-            <input className="field__control" value="BDT — Bangladeshi Taka" disabled />
+            <label className="field__label">{t('Currency')}</label>
+            <input className="field__control" value={t('BDT — Bangladeshi Taka')} disabled />
           </div>
           <div className="field field--full">
-            <label className="field__label">Receipt footer</label>
+            <label className="field__label">{t('Receipt footer')}</label>
             <input
               className="field__control"
               value={form.receiptFooter}
               onChange={(e) => set('receiptFooter', e.target.value)}
-              placeholder="Thank you for choosing Munchivo!"
+              placeholder={t('Thank you for choosing Munchivo!')}
             />
           </div>
         </div>
 
         <div className="modal__actions">
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Save business settings'}
+            {saving ? t('Saving…') : t('Save business settings')}
           </button>
         </div>
       </form>
@@ -343,6 +349,7 @@ function BusinessForm({ business, onSaved, onError }) {
 
 /* ------------------------------------------------------------------ */
 function PasswordForm({ onSaved, onError }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -358,13 +365,13 @@ function PasswordForm({ onSaved, onError }) {
     e.preventDefault()
     onError('')
     if (!form.currentPassword || !form.newPassword) {
-      return onError('Fill in both password fields.')
+      return onError(t('Fill in both password fields.'))
     }
     if (form.newPassword.length < 8) {
-      return onError('New password must be at least 8 characters.')
+      return onError(t('New password must be at least 8 characters.'))
     }
     if (form.newPassword !== form.confirmPassword) {
-      return onError('New password and confirmation do not match.')
+      return onError(t('New password and confirmation do not match.'))
     }
     setSaving(true)
     try {
@@ -387,13 +394,13 @@ function PasswordForm({ onSaved, onError }) {
   return (
     <div className="card">
       <div className="card__title">
-        <h3>Change password</h3>
+        <h3>{t('Change password')}</h3>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field field--full">
-            <label className="field__label">Current password *</label>
+            <label className="field__label">{t('Current password *')}</label>
             <input
               className="field__control"
               type="password"
@@ -403,7 +410,7 @@ function PasswordForm({ onSaved, onError }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">New password *</label>
+            <label className="field__label">{t('New password *')}</label>
             <input
               className="field__control"
               type="password"
@@ -413,7 +420,7 @@ function PasswordForm({ onSaved, onError }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Confirm new password *</label>
+            <label className="field__label">{t('Confirm new password *')}</label>
             <input
               className="field__control"
               type="password"
@@ -424,15 +431,16 @@ function PasswordForm({ onSaved, onError }) {
           </div>
           <div className="field field--full">
             <p className="settings-hint">
-              Use at least 8 characters. For security, all other signed-in
-              devices are logged out after the change.
+              {t(
+                'Use at least 8 characters. For security, all other signed-in devices are logged out after the change.',
+              )}
             </p>
           </div>
         </div>
 
         <div className="modal__actions">
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Updating…' : 'Update password'}
+            {saving ? t('Updating…') : t('Update password')}
           </button>
         </div>
       </form>
@@ -442,12 +450,15 @@ function PasswordForm({ onSaved, onError }) {
 
 /* ------------------------------------------------------------------ */
 function TeamList({ team, currentUserId }) {
+  const { t, locale } = useTranslation()
   return (
     <div className="card card--flush">
       <div className="card__title" style={{ padding: '20px 20px 0' }}>
-        <h3>Team accounts</h3>
+        <h3>{t('Team accounts')}</h3>
         <span className="badge badge--neutral">
-          {team.length} account{team.length === 1 ? '' : 's'}
+          {t(team.length === 1 ? '{count} account' : '{count} accounts', {
+            count: team.length,
+          })}
         </span>
       </div>
 
@@ -455,11 +466,11 @@ function TeamList({ team, currentUserId }) {
         <table className="table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Added</th>
+              <th>{t('Name')}</th>
+              <th>{t('Email')}</th>
+              <th>{t('Role')}</th>
+              <th>{t('Status')}</th>
+              <th>{t('Added')}</th>
             </tr>
           </thead>
           <tbody>
@@ -468,19 +479,19 @@ function TeamList({ team, currentUserId }) {
                 <td>
                   <strong>{member.name}</strong>
                   {member.id === currentUserId && (
-                    <> <span className="badge badge--success">You</span></>
+                    <> <span className="badge badge--success">{t('You')}</span></>
                   )}
                 </td>
                 <td>{member.email}</td>
-                <td>{ROLE_LABEL[member.role] || member.role}</td>
+                <td>{t(ROLE_LABEL[member.role] || member.role)}</td>
                 <td>
                   {member.isActive ? (
-                    <span className="badge badge--success">Active</span>
+                    <span className="badge badge--success">{t('Active')}</span>
                   ) : (
-                    <span className="badge badge--neutral">Disabled</span>
+                    <span className="badge badge--neutral">{t('Disabled')}</span>
                   )}
                 </td>
-                <td>{formatDate(member.createdAt)}</td>
+                <td>{formatDate(member.createdAt, locale)}</td>
               </tr>
             ))}
           </tbody>
@@ -489,8 +500,9 @@ function TeamList({ team, currentUserId }) {
 
       <div style={{ padding: '0 20px 20px' }}>
         <p className="settings-hint">
-          Accounts are provisioned with the <code>npm run setup:partners</code>{' '}
-          script. Each partner signs in with their own email and password.
+          {t(
+            'Accounts are provisioned with the npm run setup:partners script. Each partner signs in with their own email and password.',
+          )}
         </p>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 
 /**
  * NOTIFICATIONS — the notification center.
@@ -8,6 +9,7 @@ import { api } from '../lib/api.js'
  *   STOCK alerts arrive even when the app is closed.
  */
 export default function NotificationsPage() {
+  const { t, locale } = useTranslation()
   const [items, setItems] = useState([])
   const [unread, setUnread] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -79,10 +81,10 @@ export default function NotificationsPage() {
         body: { endpoint: sub.endpoint, keys: json.keys },
       })
       setPushState('on')
-      setTestResult('This device will now receive low-stock alerts.')
+      setTestResult(t('This device will now receive low-stock alerts.'))
     } catch (err) {
       setPushState(Notification.permission === 'denied' ? 'denied' : 'off')
-      setError(`Could not enable push: ${err.message}`)
+      setError(t('Could not enable push: {error}', { error: err.message }))
     }
   }
 
@@ -92,8 +94,10 @@ export default function NotificationsPage() {
       const r = await api('/api/push/test', { method: 'POST', body: {} })
       setTestResult(
         r.sent > 0
-          ? 'Test sent — check your notification area (works even when the app tab is in the background).'
-          : 'No subscribed devices found. Enable browser push first.',
+          ? t(
+              'Test sent — check your notification area (works even when the app tab is in the background).',
+            )
+          : t('No subscribed devices found. Enable browser push first.'),
       )
     } catch (err) {
       setTestResult(err.message)
@@ -113,40 +117,41 @@ export default function NotificationsPage() {
   return (
     <>
       <div>
-        <h1>Notifications</h1>
+        <h1>{t('Notifications')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Automatic low-stock and expiry alerts for the whole team.
+          {t('Automatic low-stock and expiry alerts for the whole team.')}
         </p>
       </div>
 
       <div className="card">
         <div className="card__title">
-          <h3>Browser push</h3>
-          {pushState === 'on' && <span className="badge badge--success">Enabled on this device</span>}
-          {pushState === 'off' && <span className="badge badge--neutral">Off</span>}
-          {pushState === 'denied' && <span className="badge badge--danger">Blocked in browser settings</span>}
-          {pushState === 'unsupported' && <span className="badge badge--neutral">Not supported by this browser</span>}
+          <h3>{t('Browser push')}</h3>
+          {pushState === 'on' && <span className="badge badge--success">{t('Enabled on this device')}</span>}
+          {pushState === 'off' && <span className="badge badge--neutral">{t('Off')}</span>}
+          {pushState === 'denied' && <span className="badge badge--danger">{t('Blocked in browser settings')}</span>}
+          {pushState === 'unsupported' && <span className="badge badge--neutral">{t('Not supported by this browser')}</span>}
         </div>
         <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '0 0 12px' }}>
-          Low-stock alerts are created automatically when ingredient stock hits
-          its threshold. Enable push to receive them on this device even when
-          the management app is closed.
+          {t(
+            'Low-stock alerts are created automatically when ingredient stock hits its threshold. Enable push to receive them on this device even when the management app is closed.',
+          )}
         </p>
         <div className="inline-actions">
           {pushState === 'off' && (
             <button type="button" className="btn btn--primary btn--sm" onClick={enablePush}>
-              Enable browser push
+              {t('Enable browser push')}
             </button>
           )}
           {pushState === 'on' && (
             <button type="button" className="btn btn--dark btn--sm" onClick={sendTest}>
-              Send test notification
+              {t('Send test notification')}
             </button>
           )}
           {pushState === 'denied' && (
             <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Push was blocked — reset notification permissions in your browser
-              settings (click the lock icon in the address bar).
+              {t(
+                'Push was blocked — reset notification permissions in your browser settings (click the lock icon in the address bar).',
+              )}
             </span>
           )}
         </div>
@@ -157,21 +162,21 @@ export default function NotificationsPage() {
 
       <div className="card card--flush">
         <div className="card__title" style={{ padding: '16px 20px 0' }}>
-          <h3>All notifications</h3>
+          <h3>{t('All notifications')}</h3>
           {unread > 0 && (
             <button type="button" className="link-btn" onClick={markAll}>
-              Mark all read ({unread})
+              {t('Mark all read ({count})', { count: unread })}
             </button>
           )}
         </div>
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : items.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🔔</span>
-            <span className="empty__title">No notifications yet</span>
+            <span className="empty__title">{t('No notifications yet')}</span>
             <span className="empty__hint">
-              Low-stock alerts appear automatically as ingredients run out.
+              {t('Low-stock alerts appear automatically as ingredients run out.')}
             </span>
           </div>
         ) : (
@@ -180,18 +185,18 @@ export default function NotificationsPage() {
               <li key={n.id} className={`notif-item${n.readAt ? '' : ' notif-item--unread'}`}>
                 <div className="notif-item__main">
                   <div className="notif-item__title">
-                    {n.severity === 'critical' && <span className="badge badge--danger">Critical</span>}
-                    {n.severity === 'warning' && <span className="badge badge--warning">Warning</span>}
-                    {n.severity === 'info' && <span className="badge badge--neutral">Info</span>}
+                    {n.severity === 'critical' && <span className="badge badge--danger">{t('Critical')}</span>}
+                    {n.severity === 'warning' && <span className="badge badge--warning">{t('Warning')}</span>}
+                    {n.severity === 'info' && <span className="badge badge--neutral">{t('Info')}</span>}
                     <strong>{n.title}</strong>
-                    {!n.readAt && <span className="notif-item__dot" aria-label="unread" />}
+                    {!n.readAt && <span className="notif-item__dot" aria-label={t('unread')} />}
                   </div>
                   <p className="notif-item__body">{n.body}</p>
-                  <span className="notif-item__time">{new Date(n.createdAt).toLocaleString()}</span>
+                  <span className="notif-item__time">{new Date(n.createdAt).toLocaleString(locale)}</span>
                 </div>
                 {!n.readAt && (
                   <button type="button" className="link-btn" onClick={() => markOne(n.id)}>
-                    Mark read
+                    {t('Mark read')}
                   </button>
                 )}
               </li>

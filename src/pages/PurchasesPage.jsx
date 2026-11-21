@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty } from '../shared/units.js'
 import Modal from '../components/ui/Modal.jsx'
 
@@ -17,6 +18,7 @@ function blankItem() {
 }
 
 export default function PurchasesPage() {
+  const { t } = useTranslation()
   const [rows, setRows] = useState([])
   const [ingredients, setIngredients] = useState([])
   const [loading, setLoading] = useState(true)
@@ -48,9 +50,9 @@ export default function PurchasesPage() {
   return (
     <>
       <div>
-        <h1>Purchases</h1>
+        <h1>{t('Purchases')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Confirmed purchases automatically increase ingredient stock.
+          {t('Confirmed purchases automatically increase ingredient stock.')}
         </p>
       </div>
 
@@ -60,22 +62,22 @@ export default function PurchasesPage() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="all">All purchases</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="all">{t('All purchases')}</option>
+          <option value="confirmed">{t('Confirmed')}</option>
+          <option value="cancelled">{t('Cancelled')}</option>
         </select>
         <button
           type="button"
           className="btn btn--primary"
           onClick={() => {
             if (ingredients.length === 0) {
-              alert('Add at least one ingredient before recording a purchase.')
+              alert(t('Add at least one ingredient before recording a purchase.'))
               return
             }
             setCreating(true)
           }}
         >
-          + New Purchase
+          {t('+ New Purchase')}
         </button>
       </div>
 
@@ -83,14 +85,15 @@ export default function PurchasesPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : rows.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🧾</span>
-            <span className="empty__title">No purchases yet</span>
+            <span className="empty__title">{t('No purchases yet')}</span>
             <span className="empty__hint">
-              Record your first purchase — stock, average cost and supplier dues
-              will update automatically.
+              {t(
+                'Record your first purchase — stock, average cost and supplier dues will update automatically.',
+              )}
             </span>
           </div>
         ) : (
@@ -98,12 +101,12 @@ export default function PurchasesPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Paid</th>
-                  <th>Due</th>
-                  <th>Status</th>
+                  <th>{t('Date')}</th>
+                  <th>{t('Items')}</th>
+                  <th>{t('Total')}</th>
+                  <th>{t('Paid')}</th>
+                  <th>{t('Due')}</th>
+                  <th>{t('Status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -121,16 +124,16 @@ export default function PurchasesPage() {
                       </td>
                       <td>
                         {p.status === 'cancelled' ? (
-                          <span className="badge badge--neutral">Cancelled</span>
+                          <span className="badge badge--neutral">{t('Cancelled')}</span>
                         ) : due > 0 ? (
-                          <span className="badge badge--warning">Due</span>
+                          <span className="badge badge--warning">{t('Due')}</span>
                         ) : (
-                          <span className="badge badge--success">Paid</span>
+                          <span className="badge badge--success">{t('Paid')}</span>
                         )}
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <button type="button" className="link-btn" onClick={() => setDetailId(p.id)}>
-                          View
+                          {t('View')}
                         </button>
                       </td>
                     </tr>
@@ -169,6 +172,7 @@ export default function PurchasesPage() {
 
 /* ------------------------------------------------------------------ */
 function PurchaseForm({ ingredients, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     purchaseDate: todayStr(),
     paymentMethod: 'cash',
@@ -195,9 +199,10 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
     e.preventDefault()
     setError('')
     const validItems = items.filter((it) => it.ingredientId && Number(it.quantity) > 0)
-    if (validItems.length === 0) return setError('Add at least one item with an ingredient and quantity.')
+    if (validItems.length === 0)
+      return setError(t('Add at least one item with an ingredient and quantity.'))
     if (validItems.some((it) => !it.lineTotal || Number(it.lineTotal) < 0))
-      return setError('Every item needs a total cost (0 or more).')
+      return setError(t('Every item needs a total cost (0 or more).'))
 
     setSaving(true)
     try {
@@ -224,11 +229,11 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
   }
 
   return (
-    <Modal title="New Purchase" onClose={onClose} wide>
+    <Modal title={t('New Purchase')} onClose={onClose} wide>
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field">
-            <label className="field__label">Purchase date *</label>
+            <label className="field__label">{t('Purchase date *')}</label>
             <input
               className="field__control"
               type="date"
@@ -237,7 +242,7 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Invoice number</label>
+            <label className="field__label">{t('Invoice number')}</label>
             <input
               className="field__control"
               value={form.invoiceNumber}
@@ -246,19 +251,19 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
           </div>
         </div>
 
-        <div className="section-label">Items</div>
+        <div className="section-label">{t('Items')}</div>
         {items.map((it, idx) => {
           const ing = selectedIng(it)
           return (
             <div className="item-row" key={idx}>
               <div className="field">
-                <label className="field__label">Ingredient</label>
+                <label className="field__label">{t('Ingredient')}</label>
                 <select
                   className="field__control"
                   value={it.ingredientId}
                   onChange={(e) => setItem(idx, 'ingredientId', e.target.value)}
                 >
-                  <option value="">— select —</option>
+                  <option value="">{t('— select —')}</option>
                   {ingredients.map((i) => (
                     <option key={i.id} value={i.id}>
                       {i.name} ({i.displayUnit})
@@ -267,7 +272,9 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
                 </select>
               </div>
               <div className="field">
-                <label className="field__label">Quantity ({ing ? ing.displayUnit : 'unit'})</label>
+                <label className="field__label">
+                  {t('Quantity ({unit})', { unit: ing ? ing.displayUnit : t('Unit') })}
+                </label>
                 <input
                   className="field__control"
                   type="number"
@@ -278,7 +285,7 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
                 />
               </div>
               <div className="field">
-                <label className="field__label">Total cost (৳)</label>
+                <label className="field__label">{t('Total cost (৳)')}</label>
                 <input
                   className="field__control"
                   type="number"
@@ -289,7 +296,7 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
                 />
               </div>
               <div className="field">
-                <label className="field__label">Expiry (optional)</label>
+                <label className="field__label">{t('Expiry (optional)')}</label>
                 <input
                   className="field__control"
                   type="date"
@@ -310,22 +317,22 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
           )
         })}
         <button type="button" className="link-btn" onClick={() => setItems((l) => [...l, blankItem()])}>
-          + Add another item
+          {t('+ Add another item')}
         </button>
 
         <div className="form-grid">
           <div className="field">
-            <label className="field__label">Payment method</label>
+            <label className="field__label">{t('Payment method')}</label>
             <select className="field__control" value={form.paymentMethod} onChange={(e) => set('paymentMethod', e.target.value)}>
               {PAYMENT_METHODS.map((m) => (
                 <option key={m.value} value={m.value}>
-                  {m.label}
+                  {t(m.label)}
                 </option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label className="field__label">Paid now (৳, rest becomes due)</label>
+            <label className="field__label">{t('Paid now (৳, rest becomes due)')}</label>
             <input
               className="field__control"
               type="number"
@@ -337,13 +344,13 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
             />
           </div>
           <div className="field field--full">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <input className="field__control" value={form.notes} onChange={(e) => set('notes', e.target.value)} />
           </div>
         </div>
 
         <div className="summary-line summary-line--total">
-          <span>Total</span>
+          <span>{t('Total')}</span>
           <strong className="money">{formatMoney(Math.round(total * 100))}</strong>
         </div>
 
@@ -351,10 +358,10 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
 
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Confirm purchase'}
+            {saving ? t('Saving…') : t('Confirm purchase')}
           </button>
         </div>
       </form>
@@ -364,6 +371,7 @@ function PurchaseForm({ ingredients, onClose, onSaved }) {
 
 /* ------------------------------------------------------------------ */
 function PurchaseDetail({ id, onClose, onChanged }) {
+  const { t } = useTranslation()
   const [data, setData] = useState(null)
   const [paying, setPaying] = useState(false)
   const [payment, setPayment] = useState({ amount: '', paymentMethod: 'cash', paidAt: todayStr() })
@@ -394,7 +402,7 @@ function PurchaseDetail({ id, onClose, onChanged }) {
   }
 
   async function handleCancel() {
-    if (!confirm('Cancel this purchase? Stock will be reversed and history kept.')) return
+    if (!confirm(t('Cancel this purchase? Stock will be reversed and history kept.'))) return
     setError('')
     try {
       await api(`/api/purchases/${id}`, { method: 'DELETE', body: { notes: 'Cancelled from purchase detail' } })
@@ -406,8 +414,8 @@ function PurchaseDetail({ id, onClose, onChanged }) {
 
   if (!data) {
     return (
-      <Modal title="Purchase" onClose={onClose}>
-        <div className="empty">{error || 'Loading…'}</div>
+      <Modal title={t('Purchase')} onClose={onClose}>
+        <div className="empty">{error || t('Loading…')}</div>
       </Modal>
     )
   }
@@ -416,33 +424,37 @@ function PurchaseDetail({ id, onClose, onChanged }) {
   const due = purchase.totalPoisha - purchase.paidPoisha
 
   return (
-    <Modal title={`Purchase — ${purchase.purchaseDate}`} onClose={onClose} wide>
+    <Modal title={t('Purchase — {date}', { date: purchase.purchaseDate })} onClose={onClose} wide>
       <div className="summary-line">
-        <span>Items</span>
-        <strong>{items.length} item{items.length === 1 ? '' : 's'}</strong>
+        <span>{t('Items')}</span>
+        <strong>
+          {t(items.length === 1 ? '{count} item' : '{count} items', {
+            count: items.length,
+          })}
+        </strong>
       </div>
       {items.map((it) => (
         <div className="summary-line" key={it.id} style={{ paddingLeft: 12 }}>
           <span style={{ color: 'var(--muted)' }}>
             {it.ingredientName} - {formatQty(it.quantityBase, it.displayUnit)}
-            {it.expiryDate ? ` - expires ${it.expiryDate}` : ''}
+            {it.expiryDate ? ` - ${t('expires')} ${it.expiryDate}` : ''}
           </span>
           <strong className="money">{formatMoney(it.lineTotalPoisha)}</strong>
         </div>
       ))}
       <div className="summary-line summary-line--total">
-        <span>Total {formatMoney(purchase.totalPoisha)} {formatMoney(purchase.paidPoisha)}</span>
+        <span>{t('Total')} {formatMoney(purchase.totalPoisha)} {formatMoney(purchase.paidPoisha)}</span>
         <strong className={due > 0 ? 'stock-low money' : 'money'}>
-          {due > 0 ? `Due ${formatMoney(due)}` : 'Fully paid'}
+          {due > 0 ? t('Due {amount}', { amount: formatMoney(due) }) : t('Fully paid')}
         </strong>
       </div>
 
-      <div className="section-label">Payments</div>
-      {payments.length === 0 && <p style={{ color: 'var(--muted)' }}>No payments recorded.</p>}
+      <div className="section-label">{t('Payments')}</div>
+      {payments.length === 0 && <p style={{ color: 'var(--muted)' }}>{t('No payments recorded.')}</p>}
       {payments.map((p) => (
         <div className="summary-line" key={p.id}>
           <span>
-            {p.paidAt} - {p.paymentMethod} - {p.recordedBy ? ` - ${p.recordedBy}` : ''}
+            {p.paidAt} - {t(PAYMENT_METHODS.find((m) => m.value === p.paymentMethod)?.label || p.paymentMethod)} - {p.recordedBy ? ` - ${p.recordedBy}` : ''}
           </span>
           <strong className="money">{formatMoney(p.amountPoisha)}</strong>
         </div>
@@ -450,14 +462,14 @@ function PurchaseDetail({ id, onClose, onChanged }) {
 
       {purchase.status === 'confirmed' && due > 0 && !paying && (
         <button type="button" className="btn btn--dark" onClick={() => setPaying(true)}>
-          Record payment
+          {t('Record payment')}
         </button>
       )}
 
       {paying && (
         <form onSubmit={handlePay} className="form-grid">
           <div className="field">
-            <label className="field__label">Amount (৳)</label>
+            <label className="field__label">{t('Amount (৳)')}</label>
             <input
               className="field__control"
               type="number"
@@ -469,7 +481,7 @@ function PurchaseDetail({ id, onClose, onChanged }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Method</label>
+            <label className="field__label">{t('Method')}</label>
             <select
               className="field__control"
               value={payment.paymentMethod}
@@ -477,17 +489,17 @@ function PurchaseDetail({ id, onClose, onChanged }) {
             >
               {PAYMENT_METHODS.map((m) => (
                 <option key={m.value} value={m.value}>
-                  {m.label}
+                  {t(m.label)}
                 </option>
               ))}
             </select>
           </div>
           <div className="modal__actions" style={{ gridColumn: '1 / -1' }}>
             <button type="button" className="btn btn--ghost" onClick={() => setPaying(false)}>
-              Cancel
+              {t('Cancel')}
             </button>
             <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? 'Saving…' : 'Save payment'}
+              {saving ? t('Saving…') : t('Save payment')}
             </button>
           </div>
         </form>
@@ -495,12 +507,12 @@ function PurchaseDetail({ id, onClose, onChanged }) {
 
       {purchase.status === 'confirmed' && (
         <button type="button" className="link-btn link-btn--danger" onClick={handleCancel}>
-          Cancel this purchase (reverses stock)
+          {t('Cancel this purchase (reverses stock)')}
         </button>
       )}
       {purchase.status === 'cancelled' && (
         <div className="alert alert--error">
-          This purchase was cancelled — its stock effects were reversed.
+          {t('This purchase was cancelled — its stock effects were reversed.')}
         </div>
       )}
 

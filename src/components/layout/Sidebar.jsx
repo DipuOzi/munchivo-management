@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { useTranslation } from '../../lib/i18n.jsx'
 import logoUrl from '/images/munchivo-logo.svg'
 
 const NAV_SECTIONS = [
@@ -170,21 +171,22 @@ function NavIcon({ name }) {
 
 export default function Sidebar({ open }) {
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   return (
     <aside className={`sidebar${open ? ' is-open' : ''}`}>
       <div className="sidebar__brand">
-        <img className="sidebar__logo" src={logoUrl} alt="Munchivo logo" />
+        <img className="sidebar__logo" src={logoUrl} alt={t('Munchivo logo')} />
         <div className="sidebar__brand-name">
-          <strong>Munchivo</strong>
-          <span>Management</span>
+          <strong>{t('Munchivo')}</strong>
+          <span>{t('Management')}</span>
         </div>
       </div>
 
-      <nav className="sidebar__nav" aria-label="Main navigation">
+      <nav className="sidebar__nav" aria-label={t('Main navigation')}>
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
-            <div className="sidebar__section">{section.label}</div>
+            <div className="sidebar__section">{t(section.label)}</div>
             {section.items.map((item) => (
               <NavLink
                 key={item.to}
@@ -195,7 +197,7 @@ export default function Sidebar({ open }) {
                 }
               >
                 <NavIcon name={item.icon} />
-                {item.label}
+                {t(item.label)}
               </NavLink>
             ))}
           </div>
@@ -208,8 +210,8 @@ export default function Sidebar({ open }) {
             {user?.name?.charAt(0).toUpperCase() || 'M'}
           </div>
           <div className="sidebar__user-meta">
-            <span className="sidebar__user-name">{user?.name || 'Partner'}</span>
-            <span className="sidebar__user-role">Owner</span>
+            <span className="sidebar__user-name">{user?.name || t('Partner')}</span>
+            <span className="sidebar__user-role">{t('Owner')}</span>
           </div>
         </div>
       </div>

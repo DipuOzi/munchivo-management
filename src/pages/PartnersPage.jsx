@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney } from '../shared/units.js'
 import { formatDate, todayISO } from '../shared/dates.js'
 import Modal from '../components/ui/Modal.jsx'
@@ -20,6 +21,7 @@ function ownershipPercent(basisPoints) {
 }
 
 export default function PartnersPage() {
+  const { t } = useTranslation()
   const [partners, setPartners] = useState([])
   const [ownershipTotal, setOwnershipTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -58,7 +60,7 @@ export default function PartnersPage() {
   async function toggleActive(partner) {
     if (
       partner.isActive &&
-      !confirm(`Deactivate ${partner.name}? Their ledger history is kept.`)
+      !confirm(t('Deactivate {name}? Their ledger history is kept.', { name: partner.name }))
     ) {
       return
     }
@@ -84,60 +86,65 @@ export default function PartnersPage() {
   return (
     <>
       <div>
-        <h1>Partners</h1>
+        <h1>{t('Partners')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Ownership, capital, drawings and loans for each business partner.
-          Positive balances are owed by the business to the partner.
+          {t(
+            'Ownership, capital, drawings and loans for each business partner. Positive balances are owed by the business to the partner.',
+          )}
         </p>
       </div>
 
       <div className="stat-grid">
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Active partners</span>
+            <span className="stat-card__label">{t('Active partners')}</span>
             <span className="stat-card__icon stat-card__icon--orders" aria-hidden="true">👥</span>
           </div>
           <span className="stat-card__value">{summary.activeCount}</span>
           <span className="stat-card__hint">
-            Combined ownership {ownershipPercent(ownershipTotal)}
+            {t('Combined ownership {pct}', { pct: ownershipPercent(ownershipTotal) })}
           </span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Capital contributed</span>
+            <span className="stat-card__label">{t('Capital contributed')}</span>
             <span className="stat-card__icon stat-card__icon--profit" aria-hidden="true">↗</span>
           </div>
           <span className="stat-card__value money">{formatMoney(summary.capital)}</span>
-          <span className="stat-card__hint">Money partners put into the business</span>
+          <span className="stat-card__hint">{t('Money partners put into the business')}</span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Total drawings</span>
+            <span className="stat-card__label">{t('Total drawings')}</span>
             <span className="stat-card__icon stat-card__icon--inventory" aria-hidden="true">↙</span>
           </div>
           <span className="stat-card__value money">{formatMoney(summary.drawings)}</span>
-          <span className="stat-card__hint">Money taken out by partners</span>
+          <span className="stat-card__hint">{t('Money taken out by partners')}</span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Net partner balance</span>
+            <span className="stat-card__label">{t('Net partner balance')}</span>
             <span className="stat-card__icon stat-card__icon--revenue" aria-hidden="true">৳</span>
           </div>
           <span className="stat-card__value money">{formatMoney(summary.net)}</span>
-          <span className="stat-card__hint">Capital + profit share + loans − drawings</span>
+          <span className="stat-card__hint">
+            {t('Capital + profit share + loans − drawings')}
+          </span>
         </div>
       </div>
 
       {ownershipTotal > 0 && ownershipTotal !== 10000 && (
         <div className="alert alert--info">
-          Active ownership adds up to {ownershipPercent(ownershipTotal)}. Adjust
-          partner percentages so the total is exactly 100%.
+          {t(
+            'Active ownership adds up to {pct}. Adjust partner percentages so the total is exactly 100%.',
+            { pct: ownershipPercent(ownershipTotal) },
+          )}
         </div>
       )}
 
       <div className="toolbar">
         <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
-          + Add Partner
+          {t('+ Add Partner')}
         </button>
       </div>
 
@@ -145,14 +152,15 @@ export default function PartnersPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : partners.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🤝</span>
-            <span className="empty__title">No partners yet</span>
+            <span className="empty__title">{t('No partners yet')}</span>
             <span className="empty__hint">
-              Add each partner with their ownership percentage, then record
-              capital, drawings and loans in their ledger.
+              {t(
+                'Add each partner with their ownership percentage, then record capital, drawings and loans in their ledger.',
+              )}
             </span>
           </div>
         ) : (
@@ -160,12 +168,12 @@ export default function PartnersPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Partner</th>
-                  <th>Ownership</th>
-                  <th>Capital in</th>
-                  <th>Drawings</th>
-                  <th>Profit share</th>
-                  <th>Net balance</th>
+                  <th>{t('Partner')}</th>
+                  <th>{t('Ownership')}</th>
+                  <th>{t('Capital in')}</th>
+                  <th>{t('Drawings')}</th>
+                  <th>{t('Profit share')}</th>
+                  <th>{t('Net balance')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -175,7 +183,7 @@ export default function PartnersPage() {
                     <td>
                       <strong>{p.name}</strong>
                       {!p.isActive && (
-                        <> <span className="badge badge--neutral">Inactive</span></>
+                        <> <span className="badge badge--neutral">{t('Inactive')}</span></>
                       )}
                       <div className="cell-sub">
                         {[p.email, p.phone].filter(Boolean).join(' · ') || '—'}
@@ -195,14 +203,14 @@ export default function PartnersPage() {
                           className="link-btn"
                           onClick={() => openLedger(p)}
                         >
-                          Ledger ({p.transactionCount})
+                          {t('Ledger ({count})', { count: p.transactionCount })}
                         </button>
                         <button
                           type="button"
                           className="link-btn"
                           onClick={() => setEditing(p)}
                         >
-                          Edit
+                          {t('Edit')}
                         </button>
                         <button
                           type="button"
@@ -210,7 +218,7 @@ export default function PartnersPage() {
                           disabled={busyId === p.id}
                           onClick={() => toggleActive(p)}
                         >
-                          {p.isActive ? 'Deactivate' : 'Reactivate'}
+                          {p.isActive ? t('Deactivate') : t('Reactivate')}
                         </button>
                       </div>
                     </td>
@@ -249,6 +257,7 @@ export default function PartnersPage() {
 
 /* ------------------------------------------------------------------ */
 function PartnerForm({ partner, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState(
     partner
       ? {
@@ -278,10 +287,10 @@ function PartnerForm({ partner, onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!form.name.trim()) return setError('Partner name is required.')
+    if (!form.name.trim()) return setError(t('Partner name is required.'))
     const pct = Number(form.ownershipPercent || 0)
     if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
-      return setError('Ownership must be between 0% and 100%.')
+      return setError(t('Ownership must be between 0% and 100%.'))
     }
 
     setSaving(true)
@@ -309,11 +318,14 @@ function PartnerForm({ partner, onClose, onSaved }) {
   }
 
   return (
-    <Modal title={partner ? `Edit ${partner.name}` : 'Add partner'} onClose={onClose}>
+    <Modal
+      title={partner ? t('Edit {name}', { name: partner.name }) : t('Add partner')}
+      onClose={onClose}
+    >
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field field--full">
-            <label className="field__label">Partner name *</label>
+            <label className="field__label">{t('Partner name *')}</label>
             <input
               className="field__control"
               value={form.name}
@@ -322,7 +334,7 @@ function PartnerForm({ partner, onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Email</label>
+            <label className="field__label">{t('Email')}</label>
             <input
               className="field__control"
               type="email"
@@ -332,7 +344,7 @@ function PartnerForm({ partner, onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Phone</label>
+            <label className="field__label">{t('Phone')}</label>
             <input
               className="field__control"
               value={form.phone}
@@ -340,7 +352,7 @@ function PartnerForm({ partner, onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Ownership (%)</label>
+            <label className="field__label">{t('Ownership (%)')}</label>
             <input
               className="field__control"
               type="number"
@@ -349,24 +361,24 @@ function PartnerForm({ partner, onClose, onSaved }) {
               step="0.01"
               value={form.ownershipPercent}
               onChange={(e) => set('ownershipPercent', e.target.value)}
-              placeholder="e.g. 33.33"
+              placeholder={t('e.g. 33.33')}
             />
           </div>
           {partner && (
             <div className="field">
-              <label className="field__label">Status</label>
+              <label className="field__label">{t('Status')}</label>
               <label className="check-row">
                 <input
                   type="checkbox"
                   checked={form.isActive}
                   onChange={(e) => set('isActive', e.target.checked)}
                 />
-                <span>Active partner</span>
+                <span>{t('Active partner')}</span>
               </label>
             </div>
           )}
           <div className="field field--full">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <textarea
               className="field__control"
               rows="2"
@@ -380,10 +392,10 @@ function PartnerForm({ partner, onClose, onSaved }) {
 
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : partner ? 'Save changes' : 'Add partner'}
+            {saving ? t('Saving…') : partner ? t('Save changes') : t('Add partner')}
           </button>
         </div>
       </form>
@@ -393,6 +405,7 @@ function PartnerForm({ partner, onClose, onSaved }) {
 
 /* ------------------------------------------------------------------ */
 function PartnerLedger({ partner, onClose, onChanged }) {
+  const { t, locale } = useTranslation()
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -450,10 +463,10 @@ function PartnerLedger({ partner, onClose, onChanged }) {
     e.preventDefault()
     setError('')
     if (!form.amount || Number(form.amount) <= 0) {
-      return setError('Amount must be greater than zero.')
+      return setError(t('Amount must be greater than zero.'))
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.transactionDate)) {
-      return setError('Choose a valid date.')
+      return setError(t('Choose a valid date.'))
     }
     setSaving(true)
     try {
@@ -472,7 +485,7 @@ function PartnerLedger({ partner, onClose, onChanged }) {
   }
 
   async function cancelTransaction(txn) {
-    if (!confirm('Cancel this ledger entry? The history will be kept.')) return
+    if (!confirm(t('Cancel this ledger entry? The history will be kept.'))) return
     setBusyId(txn.id)
     setError('')
     try {
@@ -490,22 +503,26 @@ function PartnerLedger({ partner, onClose, onChanged }) {
   }
 
   return (
-    <Modal title={`${partner.name} — partner ledger`} onClose={onClose} wide>
+    <Modal
+      title={t('{name} — partner ledger', { name: partner.name })}
+      onClose={onClose}
+      wide
+    >
       <div className="ledger-summary">
         <div>
-          <span className="stat-card__label">Capital</span>
+          <span className="stat-card__label">{t('Capital')}</span>
           <strong className="money">{formatMoney(totals.capital)}</strong>
         </div>
         <div>
-          <span className="stat-card__label">Drawings</span>
+          <span className="stat-card__label">{t('Drawings')}</span>
           <strong className="money">{formatMoney(totals.drawings)}</strong>
         </div>
         <div>
-          <span className="stat-card__label">Profit share</span>
+          <span className="stat-card__label">{t('Profit share')}</span>
           <strong className="money">{formatMoney(totals.profitShare)}</strong>
         </div>
         <div>
-          <span className="stat-card__label">Net</span>
+          <span className="stat-card__label">{t('Net')}</span>
           <strong className={`money${totals.net < 0 ? ' stock-low' : ''}`}>
             {formatMoney(totals.net)}
           </strong>
@@ -515,19 +532,19 @@ function PartnerLedger({ partner, onClose, onChanged }) {
       <form onSubmit={addTransaction} className="ledger-form">
         <div className="ledger-form__grid">
           <div className="field">
-            <label className="field__label">Type</label>
+            <label className="field__label">{t('Type')}</label>
             <select
               className="field__control"
               value={form.type}
               onChange={(e) => set('type', e.target.value)}
             >
-              {TXN_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+              {TXN_TYPES.map((opt) => (
+                <option key={opt.value} value={opt.value}>{t(opt.label)}</option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label className="field__label">Amount (৳) *</label>
+            <label className="field__label">{t('Amount (৳) *')}</label>
             <input
               className="field__control"
               type="number"
@@ -538,7 +555,7 @@ function PartnerLedger({ partner, onClose, onChanged }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Date *</label>
+            <label className="field__label">{t('Date *')}</label>
             <input
               className="field__control"
               type="date"
@@ -547,17 +564,17 @@ function PartnerLedger({ partner, onClose, onChanged }) {
             />
           </div>
           <div className="field ledger-form__description">
-            <label className="field__label">Description</label>
+            <label className="field__label">{t('Description')}</label>
             <input
               className="field__control"
-              placeholder="Optional note"
+              placeholder={t('Optional note')}
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
             />
           </div>
           <div className="field ledger-form__submit">
             <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? 'Adding…' : 'Add entry'}
+              {saving ? t('Adding…') : t('Add entry')}
             </button>
           </div>
         </div>
@@ -565,13 +582,13 @@ function PartnerLedger({ partner, onClose, onChanged }) {
       </form>
 
       {loading ? (
-        <div className="empty">Loading ledger…</div>
+        <div className="empty">{t('Loading ledger…')}</div>
       ) : transactions.length === 0 ? (
         <div className="empty">
           <span className="empty__icon" aria-hidden="true">📒</span>
-          <span className="empty__title">No ledger entries yet</span>
+          <span className="empty__title">{t('No ledger entries yet')}</span>
           <span className="empty__hint">
-            Record capital contributions, drawings and loans above.
+            {t('Record capital contributions, drawings and loans above.')}
           </span>
         </div>
       ) : (
@@ -579,11 +596,11 @@ function PartnerLedger({ partner, onClose, onChanged }) {
           <table className="table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>By</th>
+                <th>{t('Date')}</th>
+                <th>{t('Type')}</th>
+                <th>{t('Description')}</th>
+                <th>{t('Amount')}</th>
+                <th>{t('By')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -595,11 +612,11 @@ function PartnerLedger({ partner, onClose, onChanged }) {
                 }
                 return (
                   <tr key={txn.id} className={txn.status === 'cancelled' ? 'row-muted' : ''}>
-                    <td>{formatDate(txn.transactionDate)}</td>
+                    <td>{formatDate(txn.transactionDate, locale)}</td>
                     <td>
-                      <span className={`badge badge--${meta.tone}`}>{meta.label}</span>
+                      <span className={`badge badge--${meta.tone}`}>{t(meta.label)}</span>
                       {txn.status === 'cancelled' && (
-                        <> <span className="badge badge--neutral">Cancelled</span></>
+                        <> <span className="badge badge--neutral">{t('Cancelled')}</span></>
                       )}
                     </td>
                     <td>{txn.description || '—'}</td>
@@ -619,7 +636,7 @@ function PartnerLedger({ partner, onClose, onChanged }) {
                           disabled={busyId === txn.id}
                           onClick={() => cancelTransaction(txn)}
                         >
-                          Cancel
+                          {t('Cancel')}
                         </button>
                       )}
                     </td>

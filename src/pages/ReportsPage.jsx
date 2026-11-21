@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, poishaToTaka } from '../shared/units.js'
 import {
   formatDate,
@@ -38,6 +39,7 @@ function pct(part, whole) {
 }
 
 export default function ReportsPage() {
+  const { t, locale } = useTranslation()
   const [range, setRange] = useState(monthRange())
   const [activePreset, setActivePreset] = useState('this-month')
   const [data, setData] = useState(null)
@@ -78,28 +80,28 @@ export default function ReportsPage() {
     if (!data) return
     const s = data.summary
     const rows = [
-      ['Munchivo Management — financial report'],
-      ['Business', data.business.businessName],
-      ['Period', `${data.range.start} to ${data.range.end}`],
+      [t('Munchivo Management — financial report')],
+      [t('Business'), data.business.businessName],
+      [t('Period'), `${data.range.start} — ${data.range.end}`],
       [],
-      ['Profit & loss', 'Amount (BDT)'],
-      ['Gross sales', poishaToTaka(s.grossSalesPoisha)],
-      ['Discounts', poishaToTaka(s.discountsPoisha)],
-      ['Refunds', poishaToTaka(s.refundsPoisha)],
-      ['Net revenue', poishaToTaka(s.revenuePoisha)],
-      ['Cost of goods sold', poishaToTaka(s.cogsPoisha)],
-      ['Gross profit', poishaToTaka(s.grossProfitPoisha)],
-      ['Operating expenses', poishaToTaka(s.expensesPoisha)],
-      ['Waste', poishaToTaka(s.wastePoisha)],
-      ['Net profit', poishaToTaka(s.netProfitPoisha)],
+      [t('Profit & loss'), t('Amount (BDT)')],
+      [t('Gross sales'), poishaToTaka(s.grossSalesPoisha)],
+      [t('Discounts'), poishaToTaka(s.discountsPoisha)],
+      [t('Refunds'), poishaToTaka(s.refundsPoisha)],
+      [t('Net revenue'), poishaToTaka(s.revenuePoisha)],
+      [t('Cost of goods sold (ingredients)'), poishaToTaka(s.cogsPoisha)],
+      [t('Gross profit'), poishaToTaka(s.grossProfitPoisha)],
+      [t('Operating expenses'), poishaToTaka(s.expensesPoisha)],
+      [t('Waste'), poishaToTaka(s.wastePoisha)],
+      [t('Net profit'), poishaToTaka(s.netProfitPoisha)],
       [],
-      ['Cash & balances'],
-      ['Purchases (stock)', poishaToTaka(s.purchasesPoisha)],
-      ['Unpaid expenses', poishaToTaka(s.unpaidExpensesPoisha)],
-      ['Supplier dues', poishaToTaka(s.supplierDuesPoisha)],
-      ['Inventory value', poishaToTaka(s.inventoryValuePoisha)],
+      [t('Cash & balances')],
+      [t('Purchases (stock received)'), poishaToTaka(s.purchasesPoisha)],
+      [t('Unpaid expenses'), poishaToTaka(s.unpaidExpensesPoisha)],
+      [t('Supplier dues'), poishaToTaka(s.supplierDuesPoisha)],
+      [t('Inventory value'), poishaToTaka(s.inventoryValuePoisha)],
       [],
-      ['Daily summary', 'Revenue', 'COGS', 'Expenses', 'Waste', 'Profit', 'Orders'],
+      [t('Daily summary'), t('Revenue'), t('COGS'), t('Expenses'), t('Waste'), t('Profit'), t('Orders')],
       ...data.daily.map((d) => [
         d.day,
         poishaToTaka(d.revenuePoisha),
@@ -110,7 +112,7 @@ export default function ReportsPage() {
         d.orders,
       ]),
       [],
-      ['Top products', 'Units', 'Revenue', 'COGS'],
+      [t('Top products'), t('Units'), t('Revenue'), t('COGS')],
       ...data.topProducts.map((p) => [
         p.name,
         p.units,
@@ -118,14 +120,14 @@ export default function ReportsPage() {
         poishaToTaka(p.cogsPoisha),
       ]),
       [],
-      ['Expense breakdown', 'Amount', 'Count'],
+      [t('Expense breakdown'), t('Amount'), t('Count')],
       ...data.expenseBreakdown.map((e) => [
         e.category,
         poishaToTaka(e.amountPoisha),
         e.count,
       ]),
       [],
-      ['Partner', 'Ownership %', 'Capital', 'Drawings', 'Profit share', 'Net'],
+      [t('Partner'), t('Ownership %'), t('Capital'), t('Drawings'), t('Profit share'), t('Net')],
       ...data.partners.map((p) => [
         p.name,
         (p.ownershipBasisPoints / 100).toFixed(2),
@@ -156,46 +158,54 @@ export default function ReportsPage() {
         {
           label: 'Net revenue',
           value: formatMoney(s.revenuePoisha),
-          hint: `${s.orders} order${s.orders === 1 ? '' : 's'} · avg ${formatMoney(
-            s.averageOrderPoisha,
-          )}`,
+          hint: t('{count} orders · avg {amount}', {
+            count: s.orders,
+            amount: formatMoney(s.averageOrderPoisha),
+          }),
           icon: '৳',
           cls: 'revenue',
         },
         {
           label: 'Gross profit',
           value: formatMoney(s.grossProfitPoisha),
-          hint: `${s.grossMarginPct}% gross margin`,
+          hint: t('{pct}% gross margin', { pct: s.grossMarginPct }),
           icon: '↗',
           cls: 'profit',
         },
         {
           label: 'Operating expenses',
           value: formatMoney(s.expensesPoisha),
-          hint: `${s.expenseCount} record${s.expenseCount === 1 ? '' : 's'}`,
+          hint: t(s.expenseCount === 1 ? '{count} record' : '{count} records', {
+            count: s.expenseCount,
+          }),
           icon: '▦',
           cls: 'orders',
         },
         {
           label: 'Waste',
           value: formatMoney(s.wastePoisha),
-          hint: `${s.wasteCount} record${s.wasteCount === 1 ? '' : 's'}`,
+          hint: t(s.wasteCount === 1 ? '{count} record' : '{count} records', {
+            count: s.wasteCount,
+          }),
           icon: '🗑',
           cls: 'inventory',
         },
         {
           label: 'Net profit',
           value: formatMoney(s.netProfitPoisha),
-          hint: `${s.marginPct}% net margin`,
+          hint: t('{pct}% net margin', { pct: s.marginPct }),
           icon: '★',
           cls: s.netProfitPoisha >= 0 ? 'profit' : 'inventory',
         },
         {
           label: 'Inventory value',
           value: formatMoney(s.inventoryValuePoisha),
-          hint: `${s.inventoryItemCount} active ingredient${
-            s.inventoryItemCount === 1 ? '' : 's'
-          }`,
+          hint: t(
+            s.inventoryItemCount === 1
+              ? '{count} active ingredient'
+              : '{count} active ingredients',
+            { count: s.inventoryItemCount },
+          ),
           icon: '📦',
           cls: 'orders',
         },
@@ -205,10 +215,11 @@ export default function ReportsPage() {
   return (
     <>
       <div>
-        <h1>Reports</h1>
+        <h1>{t('Reports')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Profit & loss, daily trend, payment mix, expenses, product
-          performance and partner balances for any date range.
+          {t(
+            'Profit & loss, daily trend, payment mix, expenses, product performance and partner balances for any date range.',
+          )}
         </p>
       </div>
 
@@ -223,13 +234,13 @@ export default function ReportsPage() {
               }`}
               onClick={() => choosePreset(p.id)}
             >
-              {p.label}
+              {t(p.label)}
             </button>
           ))}
         </div>
         <div className="date-range">
           <label>
-            <span className="field__label">From</span>
+            <span className="field__label">{t('From')}</span>
             <input
               type="date"
               className="field__control"
@@ -239,7 +250,7 @@ export default function ReportsPage() {
             />
           </label>
           <label>
-            <span className="field__label">To</span>
+            <span className="field__label">{t('To')}</span>
             <input
               type="date"
               className="field__control"
@@ -251,10 +262,10 @@ export default function ReportsPage() {
         </div>
         <div className="inline-actions">
           <button type="button" className="btn btn--ghost btn--sm" onClick={exportCsv} disabled={!data}>
-            Export CSV
+            {t('Export CSV')}
           </button>
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => window.print()} disabled={!data}>
-            Print
+            {t('Print')}
           </button>
         </div>
       </div>
@@ -263,17 +274,18 @@ export default function ReportsPage() {
 
       {loading || !data ? (
         <div className="card">
-          <div className="empty">Loading report…</div>
+          <div className="empty">{t('Loading report…')}</div>
         </div>
       ) : (
         <>
           <div className="report-period">
             <span>
-              <strong>{data.business.businessName}</strong> · {formatDate(data.range.start)} —{' '}
-              {formatDate(data.range.end)}
+              <strong>{data.business.businessName}</strong> ·{' '}
+              {formatDate(data.range.start, locale)} —{' '}
+              {formatDate(data.range.end, locale)}
             </span>
             {s.netProfitPoisha < 0 && (
-              <span className="badge badge--danger">Loss in this period</span>
+              <span className="badge badge--danger">{t('Loss in this period')}</span>
             )}
           </div>
 
@@ -281,7 +293,7 @@ export default function ReportsPage() {
             {cards.map((c) => (
               <div className="card stat-card" key={c.label}>
                 <div className="stat-card__top">
-                  <span className="stat-card__label">{c.label}</span>
+                  <span className="stat-card__label">{t(c.label)}</span>
                   <span className={`stat-card__icon stat-card__icon--${c.cls}`} aria-hidden="true">
                     {c.icon}
                   </span>
@@ -297,44 +309,46 @@ export default function ReportsPage() {
           <div className="report-grid">
             <div className="card">
               <div className="card__title">
-                <h3>Profit &amp; loss</h3>
-                <span className="badge badge--neutral">{data.range.days} days</span>
+                <h3>{t('Profit & loss')}</h3>
+                <span className="badge badge--neutral">
+                  {t('{count} days', { count: data.range.days })}
+                </span>
               </div>
               <div className="pl-statement">
                 <div className="pl-row">
-                  <span>Gross sales</span>
+                  <span>{t('Gross sales')}</span>
                   <strong className="money">{formatMoney(s.grossSalesPoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--sub">
-                  <span>Less discounts</span>
+                  <span>{t('Less discounts')}</span>
                   <strong className="money">−{formatMoney(s.discountsPoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--sub">
-                  <span>Less refunds</span>
+                  <span>{t('Less refunds')}</span>
                   <strong className="money">−{formatMoney(s.refundsPoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--total">
-                  <span>Net revenue</span>
+                  <span>{t('Net revenue')}</span>
                   <strong className="money">{formatMoney(s.revenuePoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--sub">
-                  <span>Cost of goods sold (ingredients)</span>
+                  <span>{t('Cost of goods sold (ingredients)')}</span>
                   <strong className="money">−{formatMoney(s.cogsPoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--total">
-                  <span>Gross profit</span>
+                  <span>{t('Gross profit')}</span>
                   <strong className="money">{formatMoney(s.grossProfitPoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--sub">
-                  <span>Operating expenses</span>
+                  <span>{t('Operating expenses')}</span>
                   <strong className="money">−{formatMoney(s.expensesPoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--sub">
-                  <span>Waste</span>
+                  <span>{t('Waste')}</span>
                   <strong className="money">−{formatMoney(s.wastePoisha)}</strong>
                 </div>
                 <div className={`pl-row pl-row--grand${s.netProfitPoisha < 0 ? ' stock-low' : ''}`}>
-                  <span>Net profit</span>
+                  <span>{t('Net profit')}</span>
                   <strong className="money">{formatMoney(s.netProfitPoisha)}</strong>
                 </div>
               </div>
@@ -342,31 +356,31 @@ export default function ReportsPage() {
 
             <div className="card">
               <div className="card__title">
-                <h3>Balances</h3>
+                <h3>{t('Balances')}</h3>
               </div>
               <div className="pl-statement">
                 <div className="pl-row">
-                  <span>Purchases (stock received)</span>
+                  <span>{t('Purchases (stock received)')}</span>
                   <strong className="money">{formatMoney(s.purchasesPoisha)}</strong>
                 </div>
                 <div className="pl-row">
-                  <span>Unpaid expenses</span>
+                  <span>{t('Unpaid expenses')}</span>
                   <strong className={`money${s.unpaidExpensesPoisha > 0 ? ' stock-low' : ''}`}>
                     {formatMoney(s.unpaidExpensesPoisha)}
                   </strong>
                 </div>
                 <div className="pl-row">
-                  <span>Supplier dues</span>
+                  <span>{t('Supplier dues')}</span>
                   <strong className={`money${s.supplierDuesPoisha > 0 ? ' stock-low' : ''}`}>
                     {formatMoney(s.supplierDuesPoisha)}
                   </strong>
                 </div>
                 <div className="pl-row">
-                  <span>Inventory value</span>
+                  <span>{t('Inventory value')}</span>
                   <strong className="money">{formatMoney(s.inventoryValuePoisha)}</strong>
                 </div>
                 <div className="pl-row pl-row--total">
-                  <span>Average order value</span>
+                  <span>{t('Average order value')}</span>
                   <strong className="money">{formatMoney(s.averageOrderPoisha)}</strong>
                 </div>
               </div>
@@ -375,10 +389,10 @@ export default function ReportsPage() {
 
           <div className="card">
             <div className="card__title">
-              <h3>Daily trend</h3>
+              <h3>{t('Daily trend')}</h3>
               <div className="chart-legend">
-                <span><i className="dot dot--revenue" /> Revenue</span>
-                <span><i className="dot dot--expense" /> Expenses + waste</span>
+                <span><i className="dot dot--revenue" /> {t('Revenue')}</span>
+                <span><i className="dot dot--expense" /> {t('Expenses + waste')}</span>
               </div>
             </div>
             <ReportTrend daily={data.daily} />
@@ -387,28 +401,28 @@ export default function ReportsPage() {
           <div className="report-grid">
             <div className="card card--flush">
               <div className="card__title" style={{ padding: '20px 20px 0' }}>
-                <h3>Payment mix</h3>
+                <h3>{t('Payment mix')}</h3>
               </div>
               {data.paymentMethods.length === 0 ? (
                 <div className="empty">
                   <span className="empty__icon" aria-hidden="true">💳</span>
-                  <span className="empty__title">No sales in this range</span>
+                  <span className="empty__title">{t('No sales in this range')}</span>
                 </div>
               ) : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Method</th>
-                        <th>Orders</th>
-                        <th>Revenue</th>
-                        <th>Share</th>
+                        <th>{t('Method')}</th>
+                        <th>{t('Orders')}</th>
+                        <th>{t('Revenue')}</th>
+                        <th>{t('Share')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.paymentMethods.map((p) => (
                         <tr key={p.method}>
-                          <td>{PAYMENT_LABEL[p.method] || p.method}</td>
+                          <td>{t(PAYMENT_LABEL[p.method] || p.method)}</td>
                           <td>{p.orders}</td>
                           <td className="money">{formatMoney(p.revenuePoisha)}</td>
                           <td>{pct(p.revenuePoisha, s.revenuePoisha)}%</td>
@@ -422,22 +436,22 @@ export default function ReportsPage() {
 
             <div className="card card--flush">
               <div className="card__title" style={{ padding: '20px 20px 0' }}>
-                <h3>Expense breakdown</h3>
+                <h3>{t('Expense breakdown')}</h3>
               </div>
               {data.expenseBreakdown.length === 0 ? (
                 <div className="empty">
                   <span className="empty__icon" aria-hidden="true">🧾</span>
-                  <span className="empty__title">No expenses in this range</span>
+                  <span className="empty__title">{t('No expenses in this range')}</span>
                 </div>
               ) : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Category</th>
-                        <th>Count</th>
-                        <th>Amount</th>
-                        <th>Share</th>
+                        <th>{t('Category')}</th>
+                        <th>{t('Count')}</th>
+                        <th>{t('Amount')}</th>
+                        <th>{t('Share')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -459,22 +473,22 @@ export default function ReportsPage() {
           <div className="report-grid">
             <div className="card card--flush">
               <div className="card__title" style={{ padding: '20px 20px 0' }}>
-                <h3>Top products</h3>
+                <h3>{t('Top products')}</h3>
               </div>
               {data.topProducts.length === 0 ? (
                 <div className="empty">
                   <span className="empty__icon" aria-hidden="true">🏆</span>
-                  <span className="empty__title">No product sales in this range</span>
+                  <span className="empty__title">{t('No product sales in this range')}</span>
                 </div>
               ) : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Product</th>
-                        <th>Units</th>
-                        <th>Revenue</th>
-                        <th>Gross profit</th>
+                        <th>{t('Product')}</th>
+                        <th>{t('Units')}</th>
+                        <th>{t('Revenue')}</th>
+                        <th>{t('Gross profit')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -496,22 +510,22 @@ export default function ReportsPage() {
 
             <div className="card card--flush">
               <div className="card__title" style={{ padding: '20px 20px 0' }}>
-                <h3>Partner balances</h3>
+                <h3>{t('Partner balances')}</h3>
               </div>
               {data.partners.length === 0 ? (
                 <div className="empty">
                   <span className="empty__icon" aria-hidden="true">🤝</span>
-                  <span className="empty__title">No partners added yet</span>
+                  <span className="empty__title">{t('No partners added yet')}</span>
                 </div>
               ) : (
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Partner</th>
-                        <th>Ownership</th>
-                        <th>Capital</th>
-                        <th>Net balance</th>
+                        <th>{t('Partner')}</th>
+                        <th>{t('Ownership')}</th>
+                        <th>{t('Capital')}</th>
+                        <th>{t('Net balance')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -539,6 +553,7 @@ export default function ReportsPage() {
 
 /* ------------------------------------------------------------------ */
 function ReportTrend({ daily }) {
+  const { t } = useTranslation()
   const hasMoney = daily.some(
     (d) => d.revenuePoisha > 0 || d.expensesPoisha > 0 || d.wastePoisha > 0,
   )
@@ -546,9 +561,9 @@ function ReportTrend({ daily }) {
     return (
       <div className="empty">
         <span className="empty__icon" aria-hidden="true">📈</span>
-        <span className="empty__title">No activity in this range</span>
+        <span className="empty__title">{t('No activity in this range')}</span>
         <span className="empty__hint">
-          Record sales and expenses to see the daily trend.
+          {t('Record sales and expenses to see the daily trend.')}
         </span>
       </div>
     )
@@ -570,7 +585,7 @@ function ReportTrend({ daily }) {
         viewBox={`0 0 ${w} ${h + 24}`}
         style={{ width: w, minWidth: '100%', display: 'block' }}
         role="img"
-        aria-label="Daily revenue versus expenses"
+        aria-label={t('Daily revenue versus expenses')}
       >
         {daily.map((d, i) => {
           const x = i * groupW
@@ -588,7 +603,7 @@ function ReportTrend({ daily }) {
                 rx="2"
                 fill={d.profitPoisha < 0 ? '#c99b00' : 'var(--orange)'}
               >
-                <title>{`${d.day} · revenue ${formatMoney(d.revenuePoisha)}`}</title>
+                <title>{`${d.day} · ${t('revenue {amount}', { amount: formatMoney(d.revenuePoisha) })}`}</title>
               </rect>
               <rect
                 x={x + barW + gap}
@@ -598,9 +613,9 @@ function ReportTrend({ daily }) {
                 rx="2"
                 fill="var(--orange-deep)"
               >
-                <title>{`${d.day} · expenses + waste ${formatMoney(
-                  d.expensesPoisha + d.wastePoisha,
-                )}`}</title>
+                <title>{`${d.day} · ${t('expenses + waste {amount}', {
+                  amount: formatMoney(d.expensesPoisha + d.wastePoisha),
+                })}`}</title>
               </rect>
               {daily.length <= 40 && i % 2 === 0 && (
                 <text

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
+import { useTranslation } from './lib/i18n.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
@@ -20,6 +21,7 @@ import ReportsPage from './pages/ReportsPage.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
 
 function LoadingScreen() {
+  const { t } = useTranslation()
   return (
     <div
       style={{
@@ -32,7 +34,7 @@ function LoadingScreen() {
         fontSize: 14,
       }}
     >
-      Loading…
+      {t('Loading…')}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty, toBase, fromBase, takaToPoisha, unitTypeFor } from '../shared/units.js'
 import { recipeCosting } from '../shared/costing.js'
 import Modal from '../components/ui/Modal.jsx'
@@ -28,6 +29,7 @@ function blankItem() {
 }
 
 export default function RecipesPage() {
+  const { t } = useTranslation()
   const [rows, setRows] = useState([])
   const [ingredients, setIngredients] = useState([])
   const [loading, setLoading] = useState(true)
@@ -57,9 +59,9 @@ export default function RecipesPage() {
   return (
     <>
       <div>
-        <h1>Recipes</h1>
+        <h1>{t('Recipes')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Costs update automatically from current ingredient prices.
+          {t('Costs update automatically from current ingredient prices.')}
         </p>
       </div>
 
@@ -69,13 +71,13 @@ export default function RecipesPage() {
           className="btn btn--primary"
           onClick={() => {
             if (ingredients.filter((i) => i.status === 'active').length === 0) {
-              alert('Add at least one ingredient first (Inventory → Add Ingredient).')
+              alert(t('Add at least one ingredient first (Inventory → Add Ingredient).'))
               return
             }
             setEditing('new')
           }}
         >
-          + New Recipe
+          {t('+ New Recipe')}
         </button>
       </div>
 
@@ -83,14 +85,15 @@ export default function RecipesPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : rows.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">📖</span>
-            <span className="empty__title">No recipes yet</span>
+            <span className="empty__title">{t('No recipes yet')}</span>
             <span className="empty__hint">
-              Create your first recipe — for example Signature Mayo with a base
-              yield of 250 g — and see its cost per gram instantly.
+              {t(
+                'Create your first recipe — for example Signature Mayo with a base yield of 250 g — and see its cost per gram instantly.',
+              )}
             </span>
           </div>
         ) : (
@@ -98,12 +101,12 @@ export default function RecipesPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Recipe</th>
-                  <th>Base yield</th>
-                  <th>Ingredients</th>
-                  <th>Batch cost</th>
-                  <th>Per 1 g/ml/pc</th>
-                  <th>Status</th>
+                  <th>{t('Recipe')}</th>
+                  <th>{t('Base yield')}</th>
+                  <th>{t('Ingredients')}</th>
+                  <th>{t('Batch cost')}</th>
+                  <th>{t('Per 1 g/ml/pc')}</th>
+                  <th>{t('Status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -124,20 +127,20 @@ export default function RecipesPage() {
                       <td className="money">{formatMoney(costing.costPerBasePoisha)}</td>
                       <td>
                         <span className={`badge ${r.status === 'active' ? 'badge--success' : 'badge--neutral'}`}>
-                          {r.status === 'active' ? 'Active' : 'Archived'}
+                          {r.status === 'active' ? t('Active') : t('Archived')}
                         </span>
                       </td>
                       <td>
                         <div className="inline-actions">
                           <button type="button" className="link-btn" onClick={() => setEditing(r)}>
-                            Edit
+                            {t('Edit')}
                           </button>
                           {r.status === 'active' ? (
                             <button
                               type="button"
                               className="link-btn link-btn--danger"
                               onClick={async () => {
-                                if (!confirm(`Archive "${r.name}"? It can be restored anytime.`)) return
+                                if (!confirm(t('Archive "{name}"? It can be restored anytime.', { name: r.name }))) return
                                 try {
                                   await api(`/api/recipes/${r.id}`, { method: 'DELETE' })
                                   load()
@@ -146,7 +149,7 @@ export default function RecipesPage() {
                                 }
                               }}
                             >
-                              Archive
+                              {t('Archive')}
                             </button>
                           ) : (
                             <button
@@ -160,7 +163,7 @@ export default function RecipesPage() {
                                 load()
                               }}
                             >
-                              Restore
+                              {t('Restore')}
                             </button>
                           )}
                         </div>
@@ -197,6 +200,7 @@ export default function RecipesPage() {
 
 /* ------------------------------------------------------------------ */
 function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState(() => {
     if (!recipe) {
       return {
@@ -271,8 +275,9 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!form.name.trim()) return setError('Recipe name is required.')
-    if (!form.baseYield || Number(form.baseYield) <= 0) return setError('Base yield must be greater than zero.')
+    if (!form.name.trim()) return setError(t('Recipe name is required.'))
+    if (!form.baseYield || Number(form.baseYield) <= 0)
+      return setError(t('Base yield must be greater than zero.'))
 
     const payloadItems = []
     for (const it of items) {
@@ -282,7 +287,8 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
       if (qtyBase <= 0) continue
       payloadItems.push({ ingredientId: ing.id, quantityBase: qtyBase })
     }
-    if (payloadItems.length === 0) return setError('Add at least one ingredient with a quantity.')
+    if (payloadItems.length === 0)
+      return setError(t('Add at least one ingredient with a quantity.'))
 
     setSaving(true)
     try {
@@ -306,29 +312,33 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
 
   return (
     <>
-      <Modal title={recipe ? `Edit ${recipe.name}` : 'New Recipe'} onClose={onClose} wide>
+      <Modal
+        title={recipe ? t('Edit {name}', { name: recipe.name }) : t('New Recipe')}
+        onClose={onClose}
+        wide
+      >
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="field field--full">
-              <label className="field__label">Recipe name *</label>
+              <label className="field__label">{t('Recipe name *')}</label>
               <input
                 className="field__control"
-                placeholder="e.g. Signature Mayo"
+                placeholder={t('e.g. Signature Mayo')}
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
               />
             </div>
             <div className="field">
-              <label className="field__label">Category</label>
+              <label className="field__label">{t('Category')}</label>
               <input
                 className="field__control"
-                placeholder="e.g. Sauces"
+                placeholder={t('e.g. Sauces')}
                 value={form.category}
                 onChange={(e) => set('category', e.target.value)}
               />
             </div>
             <div className="field">
-              <label className="field__label">Prep time (minutes)</label>
+              <label className="field__label">{t('Prep time (minutes)')}</label>
               <input
                 className="field__control"
                 type="number"
@@ -338,19 +348,19 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
               />
             </div>
             <div className="field">
-              <label className="field__label">Base yield *</label>
+              <label className="field__label">{t('Base yield *')}</label>
               <input
                 className="field__control"
                 type="number"
                 min="0"
                 step="any"
-                placeholder="e.g. 250"
+                placeholder={t('e.g. 250')}
                 value={form.baseYield}
                 onChange={(e) => set('baseYield', e.target.value)}
               />
             </div>
             <div className="field">
-              <label className="field__label">Yield unit *</label>
+              <label className="field__label">{t('Yield unit *')}</label>
               <select className="field__control" value={form.yieldUnit} onChange={(e) => set('yieldUnit', e.target.value)}>
                 {YIELD_UNITS.map((u) => (
                   <option key={u} value={u}>
@@ -361,13 +371,13 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
             </div>
           </div>
 
-          <div className="section-label">Ingredients</div>
+          <div className="section-label">{t('Ingredients')}</div>
           {items.map((it, idx) => {
             const ing = ingById(it.ingredientId)
             return (
               <div className="item-row" key={idx} style={{ gridTemplateColumns: '1.4fr 0.7fr 0.8fr auto' }}>
                 <div className="field">
-                  <label className="field__label">Ingredient</label>
+                  <label className="field__label">{t('Ingredient')}</label>
                   <select
                     className="field__control"
                     value={it.ingredientId}
@@ -386,17 +396,17 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
                       )
                     }}
                   >
-                    <option value="">— select —</option>
+                    <option value="">{t('— select —')}</option>
                     {activeIngredients.map((i) => (
                       <option key={i.id} value={i.id}>
                         {i.name} ({i.displayUnit})
                       </option>
                     ))}
-                    <option value="__new__">＋ Create new ingredient…</option>
+                    <option value="__new__">{t('＋ Create new ingredient…')}</option>
                   </select>
                 </div>
                 <div className="field">
-                  <label className="field__label">Qty</label>
+                  <label className="field__label">{t('Qty')}</label>
                   <input
                     className="field__control"
                     type="number"
@@ -408,7 +418,7 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
                   />
                 </div>
                 <div className="field">
-                  <label className="field__label">Unit</label>
+                  <label className="field__label">{t('Unit')}</label>
                   <select
                     className="field__control"
                     value={it.unit || ''}
@@ -435,12 +445,12 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
             )
           })}
           <button type="button" className="link-btn" onClick={() => setItems((l) => [...l, blankItem()])}>
-            + Add ingredient
+            {t('+ Add ingredient')}
           </button>
 
           <div className="form-grid">
             <div className="field">
-              <label className="field__label">Packaging cost per batch (৳)</label>
+              <label className="field__label">{t('Packaging cost per batch (৳)')}</label>
               <input
                 className="field__control"
                 type="number"
@@ -451,7 +461,7 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
               />
             </div>
             <div className="field">
-              <label className="field__label">Other direct costs (৳)</label>
+              <label className="field__label">{t('Other direct costs (৳)')}</label>
               <input
                 className="field__control"
                 type="number"
@@ -462,17 +472,17 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
               />
             </div>
             <div className="field field--full">
-              <label className="field__label">Preparation instructions</label>
+              <label className="field__label">{t('Preparation instructions')}</label>
               <textarea
                 className="field__control"
                 rows="3"
-                placeholder="Step-by-step instructions…"
+                placeholder={t('Step-by-step instructions…')}
                 value={form.instructions}
                 onChange={(e) => set('instructions', e.target.value)}
               />
             </div>
             <div className="field field--full">
-              <label className="field__label">Notes</label>
+              <label className="field__label">{t('Notes')}</label>
               <textarea className="field__control" rows="2" value={form.notes} onChange={(e) => set('notes', e.target.value)} />
             </div>
           </div>
@@ -480,15 +490,15 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
           {preview && (
             <div className="cost-preview">
               <div className="summary-line">
-                <span>Ingredient cost</span>
+                <span>{t('Ingredient cost')}</span>
                 <strong className="money">{formatMoney(preview.ingredientCostPoisha)}</strong>
               </div>
               <div className="summary-line">
-                <span>Batch total cost</span>
+                <span>{t('Batch total cost')}</span>
                 <strong className="money">{formatMoney(preview.totalPoisha)}</strong>
               </div>
               <div className="summary-line">
-                <span>Cost per 1 {form.yieldUnit}</span>
+                <span>{t('Cost per 1 {unit}', { unit: form.yieldUnit })}</span>
                 <strong className="money">{formatMoney(preview.costPerBasePoisha)}</strong>
               </div>
             </div>
@@ -498,10 +508,10 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
 
           <div className="modal__actions">
             <button type="button" className="btn btn--ghost" onClick={onClose}>
-              Cancel
+              {t('Cancel')}
             </button>
             <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? 'Saving…' : recipe ? 'Save changes' : 'Create recipe'}
+              {saving ? t('Saving…') : recipe ? t('Save changes') : t('Create recipe')}
             </button>
           </div>
         </form>

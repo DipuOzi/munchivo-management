@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty } from '../shared/units.js'
 
 /**
@@ -11,6 +12,7 @@ import { formatMoney, formatQty } from '../shared/units.js'
  */
 export default function DashboardPage() {
   const { user } = useAuth()
+  const { t, locale } = useTranslation()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
 
@@ -29,11 +31,11 @@ export default function DashboardPage() {
       <>
         <div>
           <h1>
-            Good day, <em>{user?.name || 'Partner'}</em>
+            {t('Good day,')} <em>{user?.name || t('Partner')}</em>
           </h1>
         </div>
         <div className="card">
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         </div>
       </>
     )
@@ -45,29 +47,31 @@ export default function DashboardPage() {
       value: formatMoney(data.today.revenue),
       hint:
         data.today.orders > 0
-          ? `${data.today.orders} order${data.today.orders === 1 ? '' : 's'} today`
-          : 'No sales recorded today',
+          ? t(data.today.orders === 1 ? '{count} order today' : '{count} orders today', {
+              count: data.today.orders,
+            })
+          : t('No sales recorded today'),
       icon: '৳',
       cls: 'revenue',
     },
     {
       label: "Today's Orders",
       value: String(data.today.orders),
-      hint: data.today.orders > 0 ? 'Keep it going!' : 'No orders recorded today',
+      hint: data.today.orders > 0 ? t('Keep it going!') : t('No orders recorded today'),
       icon: '#',
       cls: 'orders',
     },
     {
       label: "Today's Gross Profit",
       value: formatMoney(data.today.profit),
-      hint: 'Revenue minus ingredient cost (COGS)',
+      hint: t('Revenue minus ingredient cost (COGS)'),
       icon: '↗',
       cls: 'profit',
     },
     {
       label: 'Supplier Dues',
       value: formatMoney(data.supplierDues),
-      hint: 'Unpaid purchase balance',
+      hint: t('Unpaid purchase balance'),
       icon: '▦',
       cls: 'inventory',
     },
@@ -77,10 +81,10 @@ export default function DashboardPage() {
     <>
       <div>
         <h1>
-          Good day, <em>{user?.name || 'Partner'}</em>
+          {t('Good day,')} <em>{user?.name || t('Partner')}</em>
         </h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Here is how Munchivo is doing today.
+          {t('Here is how Munchivo is doing today.')}
         </p>
       </div>
 
@@ -88,7 +92,7 @@ export default function DashboardPage() {
         {stats.map((s) => (
           <div className="card stat-card" key={s.label}>
             <div className="stat-card__top">
-              <span className="stat-card__label">{s.label}</span>
+              <span className="stat-card__label">{t(s.label)}</span>
               <span className={`stat-card__icon stat-card__icon--${s.cls}`} aria-hidden="true">
                 {s.icon}
               </span>
@@ -102,9 +106,9 @@ export default function DashboardPage() {
       <div className="dash-grid">
         <div className="card">
           <div className="card__title">
-            <h3>Revenue — last 14 days</h3>
+            <h3>{t('Revenue — last 14 days')}</h3>
             <Link className="link-btn" to="/sales">
-              View sales
+              {t('View sales')}
             </Link>
           </div>
           <TrendChart trend={data.trend} />
@@ -112,17 +116,17 @@ export default function DashboardPage() {
 
         <div className="card">
           <div className="card__title">
-            <h3>Low Stock Alerts</h3>
+            <h3>{t('Low Stock Alerts')}</h3>
             <Link className="link-btn" to="/inventory">
-              Inventory
+              {t('Inventory')}
             </Link>
           </div>
           {data.lowStock.length === 0 ? (
             <div className="empty">
               <span className="empty__icon" aria-hidden="true">📦</span>
-              <span className="empty__title">All stock levels healthy</span>
+              <span className="empty__title">{t('All stock levels healthy')}</span>
               <span className="empty__hint">
-                Set thresholds on ingredients and alerts appear here automatically.
+                {t('Set thresholds on ingredients and alerts appear here automatically.')}
               </span>
             </div>
           ) : (
@@ -132,12 +136,12 @@ export default function DashboardPage() {
                   <span>
                     <strong>{i.name}</strong>
                     <span className="mini-row__sub">
-                      stock {formatQty(i.currentStockBase, i.displayUnit)} · threshold{' '}
-                      {formatQty(i.lowStockThresholdBase, i.displayUnit)}
+                      {t('stock')} {formatQty(i.currentStockBase, i.displayUnit)} ·{' '}
+                      {t('threshold')} {formatQty(i.lowStockThresholdBase, i.displayUnit)}
                     </span>
                   </span>
                   <Link className="link-btn" to="/purchases">
-                    Purchase
+                    {t('Purchase')}
                   </Link>
                 </li>
               ))}
@@ -147,16 +151,16 @@ export default function DashboardPage() {
 
         <div className="card">
           <div className="card__title">
-            <h3>Recent Orders</h3>
+            <h3>{t('Recent Orders')}</h3>
             <Link className="link-btn" to="/sales">
-              All sales
+              {t('All sales')}
             </Link>
           </div>
           {data.recentOrders.length === 0 ? (
             <div className="empty">
               <span className="empty__icon" aria-hidden="true">🧾</span>
-              <span className="empty__title">No orders yet</span>
-              <span className="empty__hint">Record your first sale to see it here.</span>
+              <span className="empty__title">{t('No orders yet')}</span>
+              <span className="empty__hint">{t('Record your first sale to see it here.')}</span>
             </div>
           ) : (
             <ul className="mini-list">
@@ -165,7 +169,7 @@ export default function DashboardPage() {
                   <span>
                     <strong>{o.orderNumber}</strong>
                     <span className="mini-row__sub">
-                      {new Date(o.saleDate).toLocaleString()} · {o.status}
+                      {new Date(o.saleDate).toLocaleString(locale)} · {t(o.status)}
                     </span>
                   </span>
                   <strong className="money">{formatMoney(o.totalPoisha)}</strong>
@@ -177,17 +181,17 @@ export default function DashboardPage() {
 
         <div className="card">
           <div className="card__title">
-            <h3>Expiring Soon</h3>
+            <h3>{t('Expiring Soon')}</h3>
             <Link className="link-btn" to="/expiry">
-              Expiry page
+              {t('Expiry page')}
             </Link>
           </div>
           {data.expiringBatches.length === 0 ? (
             <div className="empty">
               <span className="empty__icon" aria-hidden="true">✅</span>
-              <span className="empty__title">Nothing expiring in 7 days</span>
+              <span className="empty__title">{t('Nothing expiring in 7 days')}</span>
               <span className="empty__hint">
-                Purchase batches with expiry dates will surface here.
+                {t('Purchase batches with expiry dates will surface here.')}
               </span>
             </div>
           ) : (
@@ -197,11 +201,12 @@ export default function DashboardPage() {
                   <span>
                     <strong>{b.name}</strong>
                     <span className="mini-row__sub">
-                      {formatQty(b.quantityRemainingBase, b.displayUnit)} · expires {b.expiryDate}
+                      {formatQty(b.quantityRemainingBase, b.displayUnit)} · {t('expires')}{' '}
+                      {b.expiryDate}
                     </span>
                   </span>
                   <Link className="link-btn" to="/expiry">
-                    Review
+                    {t('Review')}
                   </Link>
                 </li>
               ))}
@@ -211,12 +216,12 @@ export default function DashboardPage() {
 
         <div className="card">
           <div className="card__title">
-            <h3>Top Products — 30 days</h3>
+            <h3>{t('Top Products — 30 days')}</h3>
           </div>
           {data.topProducts.length === 0 ? (
             <div className="empty">
               <span className="empty__icon" aria-hidden="true">🏆</span>
-              <span className="empty__title">No sales in the last 30 days</span>
+              <span className="empty__title">{t('No sales in the last 30 days')}</span>
             </div>
           ) : (
             <ul className="mini-list">
@@ -224,7 +229,9 @@ export default function DashboardPage() {
                 <li className="mini-row" key={p.productId || p.name}>
                   <span>
                     <strong>{p.name}</strong>
-                    <span className="mini-row__sub">{p.unitsSold} sold</span>
+                    <span className="mini-row__sub">
+                      {t('{count} sold', { count: p.unitsSold })}
+                    </span>
                   </span>
                   <strong className="money">{formatMoney(p.revenue)}</strong>
                 </li>
@@ -235,16 +242,21 @@ export default function DashboardPage() {
 
         <div className="card">
           <div className="card__title">
-            <h3>Waste This Month</h3>
+            <h3>{t('Waste This Month')}</h3>
             <Link className="link-btn" to="/waste">
-              Waste log
+              {t('Waste log')}
             </Link>
           </div>
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🗑️</span>
             <span className="empty__title money">{formatMoney(data.wasteMonth)}</span>
             <span className="empty__hint">
-              {data.wasteCount} waste record{data.wasteCount === 1 ? '' : 's'} this month.
+              {t(
+                data.wasteCount === 1
+                  ? '{count} waste record this month.'
+                  : '{count} waste records this month.',
+                { count: data.wasteCount },
+              )}
             </span>
           </div>
         </div>
@@ -255,18 +267,19 @@ export default function DashboardPage() {
 
 /* Tiny inline SVG bar chart — no chart library needed for the dashboard. */
 function TrendChart({ trend }) {
-  const max = Math.max(...trend.map((t) => t.revenue), 1)
+  const { t: tr } = useTranslation()
+  const max = Math.max(...trend.map((d) => d.revenue), 1)
   const w = 560
   const h = 140
   const gap = 6
   const barW = (w - gap * (trend.length - 1)) / trend.length
 
-  return trend.every((t) => t.revenue === 0) ? (
+  return trend.every((d) => d.revenue === 0) ? (
     <div className="empty">
       <span className="empty__icon" aria-hidden="true">📈</span>
-      <span className="empty__title">No sales data yet</span>
+      <span className="empty__title">{tr('No sales data yet')}</span>
       <span className="empty__hint">
-        Record your first sale and your daily revenue trend appears here.
+        {tr('Record your first sale and your daily revenue trend appears here.')}
       </span>
     </div>
   ) : (
@@ -274,13 +287,13 @@ function TrendChart({ trend }) {
       viewBox={`0 0 ${w} ${h + 18}`}
       style={{ width: '100%', display: 'block' }}
       role="img"
-      aria-label="Daily revenue for the last 14 days"
+      aria-label={tr('Daily revenue for the last 14 days')}
     >
-      {trend.map((t, i) => {
-        const barH = Math.round((t.revenue / max) * h)
+      {trend.map((d, i) => {
+        const barH = Math.round((d.revenue / max) * h)
         const x = i * (barW + gap)
         return (
-          <g key={t.day}>
+          <g key={d.day}>
             <rect
               x={x}
               y={h - barH}
@@ -289,11 +302,11 @@ function TrendChart({ trend }) {
               rx="4"
               fill={i === trend.length - 1 ? 'var(--orange)' : 'var(--orange-soft, #ffd766)'}
             >
-              <title>{`${t.day}: ${formatMoney(t.revenue)} (${t.orders} orders)`}</title>
+              <title>{`${d.day}: ${formatMoney(d.revenue)} (${tr('{count} orders', { count: d.orders })})`}</title>
             </rect>
             {i % 2 === 0 && (
               <text x={x + barW / 2} y={h + 14} textAnchor="middle" fontSize="10" fill="var(--muted)">
-                {t.day.slice(5)}
+                {d.day.slice(5)}
               </text>
             )}
           </g>

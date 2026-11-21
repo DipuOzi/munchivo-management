@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty, fromBase } from '../shared/units.js'
 
 /**
@@ -7,6 +8,7 @@ import { formatMoney, formatQty, fromBase } from '../shared/units.js'
  * (or already expired, still in stock).
  */
 export default function ExpiryPage() {
+  const { t } = useTranslation()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -34,10 +36,14 @@ export default function ExpiryPage() {
     const expired = days < 0
     if (
       !confirm(
-        `Record ALL remaining ${batch.name} (${formatQty(
-          batch.quantityRemainingBase,
-          batch.displayUnit,
-        )}) as ${expired ? 'expired' : 'expiring'} waste? This deducts it from stock.`,
+        t(
+          'Record ALL remaining {name} ({qty}) as {type} waste? This deducts it from stock.',
+          {
+            name: batch.name,
+            qty: formatQty(batch.quantityRemainingBase, batch.displayUnit),
+            type: t(expired ? 'expired' : 'expiring'),
+          },
+        ),
       )
     )
       return
@@ -49,7 +55,7 @@ export default function ExpiryPage() {
           ingredientId: batch.ingredientId,
           quantity: fromBase(batch.quantityRemainingBase, batch.displayUnit), // API expects display units
           reason: expired ? 'expired' : 'other',
-          notes: `From Expiry page (batch expiry ${batch.expiryDate})`,
+          notes: t('From Expiry page (batch expiry {date})', { date: batch.expiryDate }),
         },
       })
       load()
@@ -64,10 +70,11 @@ export default function ExpiryPage() {
   return (
     <>
       <div>
-        <h1>Expiry</h1>
+        <h1>{t('Expiry')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Use ingredients before they expire — record waste for anything that
-          has gone bad so costs stay accurate.
+          {t(
+            'Use ingredients before they expire — record waste for anything that has gone bad so costs stay accurate.',
+          )}
         </p>
       </div>
 
@@ -75,23 +82,27 @@ export default function ExpiryPage() {
 
       {loading ? (
         <div className="card">
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         </div>
       ) : (
         <>
           <div className="card">
             <div className="card__title">
-              <h3>Ingredient batches expiring within 7 days</h3>
+              <h3>{t('Ingredient batches expiring within 7 days')}</h3>
               {data.ingredientBatches.length > 0 && (
-                <span className="badge badge--warning">{data.ingredientBatches.length} batches</span>
+                <span className="badge badge--warning">
+                  {t('{count} batches', { count: data.ingredientBatches.length })}
+                </span>
               )}
             </div>
             {data.ingredientBatches.length === 0 ? (
               <div className="empty">
                 <span className="empty__icon" aria-hidden="true">✅</span>
-                <span className="empty__title">Nothing expiring soon</span>
+                <span className="empty__title">{t('Nothing expiring soon')}</span>
                 <span className="empty__hint">
-                  Purchase batches with expiry dates will appear here 7 days before expiry.
+                  {t(
+                    'Purchase batches with expiry dates will appear here 7 days before expiry.',
+                  )}
                 </span>
               </div>
             ) : (
@@ -99,10 +110,10 @@ export default function ExpiryPage() {
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Ingredient</th>
-                      <th>Remaining</th>
-                      <th>Expiry date</th>
-                      <th>Status</th>
+                      <th>{t('Ingredient')}</th>
+                      <th>{t('Remaining')}</th>
+                      <th>{t('Expiry date')}</th>
+                      <th>{t('Status')}</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -119,9 +130,13 @@ export default function ExpiryPage() {
                           <td>{b.expiryDate}</td>
                           <td>
                             {expired ? (
-                              <span className="badge badge--danger">Expired</span>
+                              <span className="badge badge--danger">{t('Expired')}</span>
                             ) : (
-                              <span className="badge badge--warning">{daysLeft} day{daysLeft === 1 ? '' : 's'} left</span>
+                              <span className="badge badge--warning">
+                                {t(daysLeft === 1 ? '{count} day left' : '{count} days left', {
+                                  count: daysLeft,
+                                })}
+                              </span>
                             )}
                           </td>
                           <td>
@@ -131,7 +146,7 @@ export default function ExpiryPage() {
                               disabled={busy}
                               onClick={() => wasteBatch(b)}
                             >
-                              Record as waste
+                              {t('Record as waste')}
                             </button>
                           </td>
                         </tr>

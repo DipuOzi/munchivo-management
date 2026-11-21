@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty } from '../shared/units.js'
 import Modal from '../components/ui/Modal.jsx'
 
@@ -13,6 +14,7 @@ const REASONS = [
 ]
 
 export default function WastePage() {
+  const { t, locale } = useTranslation()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -45,24 +47,25 @@ export default function WastePage() {
   return (
     <>
       <div>
-        <h1>Waste</h1>
+        <h1>{t('Waste')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Every waste record deducts stock with an immutable movement — the
-          trail can never be edited, only reversed by cancellation.
+          {t(
+            'Every waste record deducts stock with an immutable movement — the trail can never be edited, only reversed by cancellation.',
+          )}
         </p>
       </div>
 
       <div className="stat-grid">
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Waste cost this month</span>
+            <span className="stat-card__label">{t('Waste cost this month')}</span>
             <span className="stat-card__icon stat-card__icon--revenue" aria-hidden="true">৳</span>
           </div>
           <span className="stat-card__value money">{formatMoney(monthCost)}</span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Records this month</span>
+            <span className="stat-card__label">{t('Records this month')}</span>
             <span className="stat-card__icon stat-card__icon--orders" aria-hidden="true">#</span>
           </div>
           <span className="stat-card__value">
@@ -73,7 +76,7 @@ export default function WastePage() {
 
       <div className="toolbar">
         <button type="button" className="btn btn--primary" onClick={() => setFormOpen(true)}>
-          + Record Waste
+          {t('+ Record Waste')}
         </button>
       </div>
 
@@ -81,13 +84,13 @@ export default function WastePage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : rows.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🗑️</span>
-            <span className="empty__title">No waste recorded</span>
+            <span className="empty__title">{t('No waste recorded')}</span>
             <span className="empty__hint">
-              Record spoiled or expired stock here so your costs stay honest.
+              {t('Record spoiled or expired stock here so your costs stay honest.')}
             </span>
           </div>
         ) : (
@@ -95,31 +98,31 @@ export default function WastePage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Item</th>
-                  <th>Quantity</th>
-                  <th>Reason</th>
-                  <th>Cost</th>
-                  <th>Status</th>
-                  <th>By</th>
+                  <th>{t('Date')}</th>
+                  <th>{t('Item')}</th>
+                  <th>{t('Quantity')}</th>
+                  <th>{t('Reason')}</th>
+                  <th>{t('Cost')}</th>
+                  <th>{t('Status')}</th>
+                  <th>{t('By')}</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                    <td>{new Date(r.createdAt).toLocaleDateString(locale)}</td>
                     <td><strong>{r.ingredientName || r.productName}</strong></td>
                     <td>
                       {r.ingredientUnit
                         ? formatQty(r.quantityBase, r.ingredientUnit)
-                        : `${r.quantityBase} base`}
+                        : t('{count} base', { count: r.quantityBase })}
                     </td>
-                    <td>{REASONS.find((x) => x.value === r.reason)?.label || r.reason}</td>
+                    <td>{t(REASONS.find((x) => x.value === r.reason)?.label || r.reason)}</td>
                     <td className="money">{formatMoney(r.estimatedCostPoisha)}</td>
                     <td>
                       <span className={`badge ${r.status === 'confirmed' ? 'badge--warning' : 'badge--neutral'}`}>
-                        {r.status === 'confirmed' ? 'Confirmed' : 'Cancelled'}
+                        {r.status === 'confirmed' ? t('Confirmed') : t('Cancelled')}
                       </span>
                     </td>
                     <td>{r.recorderName || '—'}</td>
@@ -129,7 +132,7 @@ export default function WastePage() {
                           type="button"
                           className="link-btn link-btn--danger"
                           onClick={async () => {
-                            if (!confirm('Cancel this waste record? The stock will be returned.')) return
+                            if (!confirm(t('Cancel this waste record? The stock will be returned.'))) return
                             try {
                               await api(`/api/waste/${r.id}`, { method: 'DELETE' })
                               load()
@@ -138,7 +141,7 @@ export default function WastePage() {
                             }
                           }}
                         >
-                          Cancel
+                          {t('Cancel')}
                         </button>
                       )}
                     </td>
@@ -165,6 +168,7 @@ export default function WastePage() {
 
 /* ------------------------------------------------------------------ */
 function WasteForm({ onClose, onSaved }) {
+  const { t } = useTranslation()
   const [ingredients, setIngredients] = useState([])
   const [form, setForm] = useState({ ingredientId: '', quantity: '', reason: 'spoiled', notes: '' })
   const [error, setError] = useState('')
@@ -185,8 +189,9 @@ function WasteForm({ onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!form.ingredientId) return setError('Select an ingredient.')
-    if (!form.quantity || Number(form.quantity) <= 0) return setError('Quantity must be greater than zero.')
+    if (!form.ingredientId) return setError(t('Select an ingredient.'))
+    if (!form.quantity || Number(form.quantity) <= 0)
+      return setError(t('Quantity must be greater than zero.'))
 
     setSaving(true)
     try {
@@ -202,28 +207,27 @@ function WasteForm({ onClose, onSaved }) {
   }
 
   return (
-    <Modal title="Record Waste" onClose={onClose}>
+    <Modal title={t('Record Waste')} onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field field--full">
-            <label className="field__label">Ingredient *</label>
+            <label className="field__label">{t('Ingredient *')}</label>
             <select
               className="field__control"
               value={form.ingredientId}
               onChange={(e) => set('ingredientId', e.target.value)}
             >
-              <option value="">— select —</option>
+              <option value="">{t('— select —')}</option>
               {ingredients.map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.name} (stock: {formatQty(i.currentStockBase, i.displayUnit)})
+                  {i.name} ({t('stock:')} {formatQty(i.currentStockBase, i.displayUnit)})
                 </option>
               ))}
             </select>
           </div>
           <div className="field">
             <label className="field__label">
-              Quantity {ingredient ? `(${ingredient.displayUnit})` : ''}{' '}
-              *
+              {t('Quantity')} {ingredient ? `(${ingredient.displayUnit})` : ''} *
             </label>
             <input
               className="field__control"
@@ -235,15 +239,15 @@ function WasteForm({ onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Reason *</label>
+            <label className="field__label">{t('Reason *')}</label>
             <select className="field__control" value={form.reason} onChange={(e) => set('reason', e.target.value)}>
               {REASONS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
+                <option key={r.value} value={r.value}>{t(r.label)}</option>
               ))}
             </select>
           </div>
           <div className="field field--full">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <input className="field__control" value={form.notes} onChange={(e) => set('notes', e.target.value)} />
           </div>
         </div>
@@ -251,7 +255,7 @@ function WasteForm({ onClose, onSaved }) {
         {ingredient && form.quantity && (
           <div className="cost-preview">
             <div className="summary-line">
-              <span>Estimated cost</span>
+              <span>{t('Estimated cost')}</span>
               <strong className="money">
                 {formatMoney(Math.round(Number(form.quantity) * ingredient.avgCostPoisha))}
               </strong>
@@ -263,10 +267,10 @@ function WasteForm({ onClose, onSaved }) {
 
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Recording…' : 'Record waste'}
+            {saving ? t('Recording…') : t('Record waste')}
           </button>
         </div>
       </form>

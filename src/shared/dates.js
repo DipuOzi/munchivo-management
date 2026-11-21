@@ -46,25 +46,25 @@ export function yearRange() {
   return { start: `${year}-01-01`, end: `${year}-12-31` }
 }
 
-export function formatDate(value) {
+export function formatDate(value, locale = 'en-GB') {
   if (!value) return '—'
   const date =
     typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
       ? new Date(`${value}T00:00:00`)
       : new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleDateString('en-GB', {
+  return date.toLocaleDateString(locale, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
   })
 }
 
-export function formatDateTime(value) {
+export function formatDateTime(value, locale = 'en-GB') {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('en-GB', {
+  return date.toLocaleString(locale, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

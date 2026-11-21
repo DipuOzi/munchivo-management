@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty } from '../shared/units.js'
 import Modal from '../components/ui/Modal.jsx'
 
@@ -40,16 +41,17 @@ function num(n) {
 /* ---------- Charts (inline SVG, same approach as the dashboard) ---------- */
 
 function DailyBars({ daily }) {
+  const { t } = useTranslation()
   const max = Math.max(...daily.map((d) => d.cost), 1)
   const w = 620
   const h = 150
   const gap = 6
   const barW = Math.max((w - gap * (daily.length - 1)) / daily.length, 4)
   if (daily.every((d) => d.cost === 0)) {
-    return <div className="empty">No consumption in this period.</div>
+    return <div className="empty">{t('No consumption in this period.')}</div>
   }
   return (
-    <svg viewBox={`0 0 ${w} ${h + 18}`} style={{ width: '100%', display: 'block' }} role="img" aria-label="Daily consumption cost">
+    <svg viewBox={`0 0 ${w} ${h + 18}`} style={{ width: '100%', display: 'block' }} role="img" aria-label={t('Daily consumption cost')}>
       {daily.map((d, i) => {
         const barH = Math.round((d.cost / max) * h)
         const x = i * (barW + gap)
@@ -71,8 +73,9 @@ function DailyBars({ daily }) {
 }
 
 function IngredientBars({ ingredients }) {
+  const { t } = useTranslation()
   const top = ingredients.slice(0, 8)
-  if (top.length === 0) return <div className="empty">No ingredient consumption yet.</div>
+  if (top.length === 0) return <div className="empty">{t('No ingredient consumption yet.')}</div>
   const max = Math.max(...top.map((i) => i.totalCost), 1)
   return (
     <div style={{ display: 'grid', gap: 10 }}>
@@ -92,11 +95,12 @@ function IngredientBars({ ingredients }) {
 }
 
 function TypeBreakdown({ byType }) {
+  const { t } = useTranslation()
   const rows = [
-    { label: 'Sales consumption', value: byType.sales.cost, color: 'var(--success)' },
-    { label: 'Waste & spoilage', value: byType.waste.cost, color: 'var(--danger)' },
-    { label: 'Manual usage', value: byType.manual.cost, color: 'var(--orange)' },
-    { label: 'Expiry', value: byType.expiry.cost, color: 'var(--muted)' },
+    { label: t('Sales consumption'), value: byType.sales.cost, color: 'var(--success)' },
+    { label: t('Waste & spoilage'), value: byType.waste.cost, color: 'var(--danger)' },
+    { label: t('Manual usage'), value: byType.manual.cost, color: 'var(--orange)' },
+    { label: t('Expiry'), value: byType.expiry.cost, color: 'var(--muted)' },
   ]
   const total = rows.reduce((s, r) => s + Math.max(r.value, 0), 0) || 1
   return (
@@ -124,22 +128,26 @@ function TypeBreakdown({ byType }) {
 /* ------------------------------- Page ------------------------------- */
 
 export default function UsagePage() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState('overview')
 
   return (
     <>
       <div>
-        <h1 style={{ marginBottom: 12 }}>Inventory Usage &amp; Reconciliation</h1>
+        <h1 style={{ marginBottom: 12 }}>
+          {t('Inventory Usage & Reconciliation')}
+        </h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Track what ingredients are consumed, record manual usage, and reconcile
-          physical stock at the end of each day. All figures come from the stock ledger.
+          {t(
+            'Track what ingredients are consumed, record manual usage, and reconcile physical stock at the end of each day. All figures come from the stock ledger.',
+          )}
         </p>
       </div>
 
       <div className="toolbar" style={{ marginBottom: 16 }}>
-        <button className={`btn btn--sm ${tab === 'overview' ? 'btn--dark' : 'btn--ghost'}`} onClick={() => setTab('overview')}>Overview</button>
-        <button className={`btn btn--sm ${tab === 'report' ? 'btn--dark' : 'btn--ghost'}`} onClick={() => setTab('report')}>Daily Report</button>
-        <button className={`btn btn--sm ${tab === 'reconciliation' ? 'btn--dark' : 'btn--ghost'}`} onClick={() => setTab('reconciliation')}>Reconciliation</button>
+        <button className={`btn btn--sm ${tab === 'overview' ? 'btn--dark' : 'btn--ghost'}`} onClick={() => setTab('overview')}>{t('Overview')}</button>
+        <button className={`btn btn--sm ${tab === 'report' ? 'btn--dark' : 'btn--ghost'}`} onClick={() => setTab('report')}>{t('Daily Report')}</button>
+        <button className={`btn btn--sm ${tab === 'reconciliation' ? 'btn--dark' : 'btn--ghost'}`} onClick={() => setTab('reconciliation')}>{t('Reconciliation')}</button>
       </div>
 
       {tab === 'overview' && <OverviewTab />}
@@ -165,6 +173,7 @@ function StatCard({ label, value, hint, icon }) {
 /* ----------------------------- Overview ----------------------------- */
 
 function OverviewTab() {
+  const { t, locale } = useTranslation()
   const [range, setRange] = useState('7d')
   const [customStart, setCustomStart] = useState(todayStr())
   const [customEnd, setCustomEnd] = useState(todayStr())
@@ -214,7 +223,12 @@ function OverviewTab() {
   }, [loadRecords])
 
   if (error) return <div className="alert alert--error">{error}</div>
-  if (loading || !data) return <div className="card"><div className="empty">Loading…</div></div>
+  if (loading || !data)
+    return (
+      <div className="card">
+        <div className="empty">{t('Loading…')}</div>
+      </div>
+    )
 
   const s = data.summary
   return (
@@ -222,7 +236,7 @@ function OverviewTab() {
       <div className="toolbar">
         {RANGES.map((r) => (
           <button key={r.key} className={`btn btn--sm ${range === r.key ? 'btn--dark' : 'btn--ghost'}`} onClick={() => setRange(r.key)}>
-            {r.label}
+            {t(r.label)}
           </button>
         ))}
         {range === 'custom' && (
@@ -233,72 +247,72 @@ function OverviewTab() {
           </>
         )}
         <span style={{ flex: 1 }} />
-        <button className="btn btn--primary btn--sm" onClick={() => setUsageOpen(true)}>Record manual usage</button>
+        <button className="btn btn--primary btn--sm" onClick={() => setUsageOpen(true)}>{t('Record manual usage')}</button>
       </div>
 
       <div className="stat-grid">
-        <StatCard label="Total consumption cost" value={formatMoney(s.totalConsumptionCost)} hint={data.range.label} icon="৳" />
-        <StatCard label="Sales consumption" value={formatMoney(s.salesCost)} icon="🧾" />
-        <StatCard label="Waste & spoilage" value={formatMoney(s.wasteCost)} icon="🗑" />
-        <StatCard label="Manual usage" value={formatMoney(s.manualCost)} icon="🥄" />
-        <StatCard label="Ingredients used" value={num(s.ingredientsUsed)} icon="📦" />
-        <StatCard label="Unusual consumption" value={num(s.unusualCount)} hint="vs. previous period" icon="⚠" />
+        <StatCard label={t('Total consumption cost')} value={formatMoney(s.totalConsumptionCost)} hint={t(data.range.label)} icon="৳" />
+        <StatCard label={t('Sales consumption')} value={formatMoney(s.salesCost)} icon="🧾" />
+        <StatCard label={t('Waste & spoilage')} value={formatMoney(s.wasteCost)} icon="🗑" />
+        <StatCard label={t('Manual usage')} value={formatMoney(s.manualCost)} icon="🥄" />
+        <StatCard label={t('Ingredients used')} value={num(s.ingredientsUsed)} icon="📦" />
+        <StatCard label={t('Unusual consumption')} value={num(s.unusualCount)} hint={t('vs. previous period')} icon="⚠" />
         <StatCard
-          label="Expected closing value"
+          label={t('Expected closing value')}
           value={formatMoney(s.expectedClosingValue)}
-          hint="Stock on hand at avg cost"
+          hint={t('Stock on hand at avg cost')}
           icon="📊"
         />
         <StatCard
-          label="Adjustments"
+          label={t('Adjustments')}
           value={formatMoney(s.adjustmentCost)}
-          hint={`Net qty ${num(s.adjustmentQty)} base`}
+          hint={t('Net qty {qty} base', { qty: num(s.adjustmentQty) })}
           icon="⚖"
         />
       </div>
 
       {data.unusual.length > 0 && (
         <div className="alert alert--info" style={{ marginTop: 16 }}>
-          <strong>Unusually high consumption:</strong>{' '}
+          <strong>{t('Unusually high consumption:')}</strong>{' '}
           {data.unusual.map((u) => `${u.name} (${formatMoney(u.currentCost)})`).join(', ')}
         </div>
       )}
 
       <div className="dash-grid" style={{ marginTop: 20 }}>
         <div className="card">
-          <div className="card__title"><h3>Daily consumption cost</h3></div>
+          <div className="card__title"><h3>{t('Daily consumption cost')}</h3></div>
           <DailyBars daily={data.daily} />
         </div>
         <div className="card">
-          <div className="card__title"><h3>Usage by type</h3></div>
+          <div className="card__title"><h3>{t('Usage by type')}</h3></div>
           <TypeBreakdown byType={data.byType} />
         </div>
       </div>
 
       <div className="card" style={{ marginTop: 20 }}>
-        <div className="card__title"><h3>Ingredient-wise consumption</h3></div>
+        <div className="card__title"><h3>{t('Ingredient-wise consumption')}</h3></div>
         <IngredientBars ingredients={data.ingredients} />
       </div>
 
       <div className="card card--flush" style={{ marginTop: 20 }}>
-        <div className="card__title" style={{ padding: '0 16px' }}><h3>Ingredient breakdown</h3></div>
+        <div className="card__title" style={{ padding: '0 16px' }}><h3>{t('Ingredient breakdown')}</h3></div>
         {data.ingredients.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">📦</span>
-            <span className="empty__title">No consumption recorded</span>
-            <span className="empty__hint">Sales, waste and manual usage will appear here.</span>
+            <span className="empty__title">{t('No consumption recorded')}</span>
+            <span className="empty__hint">{t('Sales, waste and manual usage will appear here.')}</span>
           </div>
         ) : (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Ingredient</th>
-                  <th>Sales</th>
-                  <th>Waste</th>
-                  <th>Other</th>
-                  <th>Total qty</th>
-                  <th>Cost</th>
+                  <th>{t('Ingredient')}</th>
+                  <th>{t('Sales')}</th>
+                  <th>{t('Waste')}</th>
+                  <th>{t('Other')}</th>
+                  <th>{t('Total qty')}</th>
+                  <th>{t('Cost')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -320,30 +334,38 @@ function OverviewTab() {
 
       <div className="card card--flush" style={{ marginTop: 20 }}>
         <div className="card__title" style={{ padding: '0 16px' }}>
-          <h3>Recent manual usage</h3>
-          <span className="badge badge--neutral">{records.filter((r) => r.status === 'confirmed').length} confirmed</span>
+          <h3>{t('Recent manual usage')}</h3>
+          <span className="badge badge--neutral">
+            {t('{count} confirmed', {
+              count: records.filter((r) => r.status === 'confirmed').length,
+            })}
+          </span>
         </div>
         {records.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🥄</span>
-            <span className="empty__title">No manual usage recorded</span>
-            <span className="empty__hint">Staff meals, samples, testing and other non-sale usage appear here.</span>
+            <span className="empty__title">{t('No manual usage recorded')}</span>
+            <span className="empty__hint">
+              {t(
+                'Staff meals, samples, testing and other non-sale usage appear here.',
+              )}
+            </span>
           </div>
         ) : (
           <div className="table-wrap">
             <table className="table">
               <thead>
-                <tr><th>Date</th><th>Ingredient</th><th>Qty</th><th>Reason</th><th>Cost</th><th>By</th><th /></tr>
+                <tr><th>{t('Date')}</th><th>{t('Ingredient')}</th><th>{t('Quantity')}</th><th>{t('Reason')}</th><th>{t('Cost')}</th><th>{t('By')}</th><th /></tr>
               </thead>
               <tbody>
                 {records.map((r) => (
                   <tr key={r.id}>
-                    <td>{new Date(r.createdAt).toLocaleString()}</td>
+                    <td>{new Date(r.createdAt).toLocaleString(locale)}</td>
                     <td><strong>{r.ingredientName}</strong></td>
                     <td>{formatQty(r.quantityBase, r.ingredientUnit)}</td>
                     <td>
-                      <span className="badge badge--neutral">{REASON_LABEL[r.reason] || r.reason}</span>
-                      {r.status === 'cancelled' && <span className="badge badge--warning" style={{ marginLeft: 6 }}>cancelled</span>}
+                      <span className="badge badge--neutral">{t(REASON_LABEL[r.reason] || r.reason)}</span>
+                      {r.status === 'cancelled' && <span className="badge badge--warning" style={{ marginLeft: 6 }}>{t('cancelled')}</span>}
                     </td>
                     <td className="money">{formatMoney(r.quantityBase * r.unitCostPoisha)}</td>
                     <td>{r.recorderName || '—'}</td>
@@ -376,9 +398,10 @@ function OverviewTab() {
 }
 
 function ManualUsageCancel({ id, onDone }) {
+  const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const cancel = async () => {
-    if (!window.confirm('Cancel this manual usage and return the stock?')) return
+    if (!window.confirm(t('Cancel this manual usage and return the stock?'))) return
     setBusy(true)
     try {
       await api(`/api/usage/${id}`, { method: 'DELETE' })
@@ -391,12 +414,13 @@ function ManualUsageCancel({ id, onDone }) {
   }
   return (
     <button className="link-btn link-btn--danger" onClick={cancel} disabled={busy}>
-      {busy ? '…' : 'Cancel'}
+      {busy ? '…' : t('Cancel')}
     </button>
   )
 }
 
 function ManualUsageModal({ ingredients, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState({ ingredientId: '', quantity: '', unit: '', reason: 'staff_meal', notes: '' })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -411,9 +435,11 @@ function ManualUsageModal({ ingredients, onClose, onSaved }) {
   const submit = async (e) => {
     e.preventDefault()
     setError('')
-    if (!form.ingredientId) return setError('Select an ingredient.')
-    if (!form.quantity || Number(form.quantity) <= 0) return setError('Quantity must be greater than zero.')
-    if (!window.confirm('Confirm this stock usage? It will deduct inventory.')) return
+    if (!form.ingredientId) return setError(t('Select an ingredient.'))
+    if (!form.quantity || Number(form.quantity) <= 0)
+      return setError(t('Quantity must be greater than zero.'))
+    if (!window.confirm(t('Confirm this stock usage? It will deduct inventory.')))
+      return
     setSaving(true)
     try {
       await api('/api/usage', {
@@ -428,34 +454,34 @@ function ManualUsageModal({ ingredients, onClose, onSaved }) {
   }
 
   return (
-    <Modal title="Record Manual Usage" onClose={onClose}>
+    <Modal title={t('Record Manual Usage')} onClose={onClose}>
       <form onSubmit={submit}>
         <div className="form-grid">
           <div className="field field--full">
-            <label className="field__label">Ingredient *</label>
+            <label className="field__label">{t('Ingredient *')}</label>
             <select
               className="field__control"
               value={form.ingredientId}
               onChange={(e) => setForm((f) => ({ ...f, ingredientId: e.target.value, unit: ingredients.find((i) => i.id === e.target.value)?.displayUnit || '' }))}
             >
-              <option value="">— select —</option>
+              <option value="">{t('— select —')}</option>
               {ingredients.map((i) => (
-                <option key={i.id} value={i.id}>{i.name} (stock: {formatQty(i.currentStockBase, i.displayUnit)})</option>
+                <option key={i.id} value={i.id}>{i.name} ({t('stock:')} {formatQty(i.currentStockBase, i.displayUnit)})</option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label className="field__label">Quantity {unit ? `(${unit})` : ''} *</label>
+            <label className="field__label">{t('Quantity')} {unit ? `(${unit})` : ''} *</label>
             <input className="field__control" type="number" min="0" step="any" value={form.quantity} onChange={(e) => set('quantity', e.target.value)} />
           </div>
           <div className="field">
-            <label className="field__label">Reason *</label>
+            <label className="field__label">{t('Reason *')}</label>
             <select className="field__control" value={form.reason} onChange={(e) => set('reason', e.target.value)}>
-              {USAGE_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              {USAGE_REASONS.map((r) => <option key={r.value} value={r.value}>{t(r.label)}</option>)}
             </select>
           </div>
           <div className="field field--full">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <input className="field__control" value={form.notes} onChange={(e) => set('notes', e.target.value)} />
           </div>
         </div>
@@ -463,7 +489,7 @@ function ManualUsageModal({ ingredients, onClose, onSaved }) {
         {ingredient && form.quantity && (
           <div className="cost-preview">
             <div className="summary-line">
-              <span>Estimated cost</span>
+              <span>{t('Estimated cost')}</span>
               <strong className="money">{formatMoney(Math.round(Number(form.quantity) * ingredient.avgCostPoisha))}</strong>
             </div>
           </div>
@@ -472,8 +498,8 @@ function ManualUsageModal({ ingredients, onClose, onSaved }) {
         {error && <div className="alert alert--error">{error}</div>}
 
         <div className="modal__actions">
-          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn--primary" disabled={saving}>{saving ? 'Saving…' : 'Record usage'}</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>{t('Cancel')}</button>
+          <button type="submit" className="btn btn--primary" disabled={saving}>{saving ? t('Saving…') : t('Record usage')}</button>
         </div>
       </form>
     </Modal>
@@ -483,6 +509,7 @@ function ManualUsageModal({ ingredients, onClose, onSaved }) {
 /* ---------------------------- Daily Report ---------------------------- */
 
 function ReportTab() {
+  const { t } = useTranslation()
   const [date, setDate] = useState(todayStr())
   const [search, setSearch] = useState('')
   const [data, setData] = useState(null)
@@ -504,8 +531,8 @@ function ReportTab() {
   }, [date, search])
 
   useEffect(() => {
-    const t = setTimeout(load, search ? 250 : 0)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, search ? 250 : 0)
+    return () => clearTimeout(timer)
   }, [load, search])
 
   const exportCsv = () => {
@@ -513,7 +540,7 @@ function ReportTab() {
     const header = [
       'Ingredient', 'Opening', 'Purchased', 'Sales', 'Production', 'Waste', 'Other',
       'Total consumed', 'Expected closing', 'Actual closing', 'Difference', 'Consumption cost',
-    ]
+    ].map((label) => t(label))
     const rows = data.ingredients.map((i) => [
       i.name,
       i.openingBase, i.purchasedBase, i.salesBase, i.productionBase, i.wasteBase, i.otherBase,
@@ -539,43 +566,43 @@ function ReportTab() {
   return (
     <>
       <div className="toolbar">
-        <label style={{ fontSize: 13, color: 'var(--muted)' }}>Date</label>
+        <label style={{ fontSize: 13, color: 'var(--muted)' }}>{t('Date')}</label>
         <input className="field__control" type="date" style={{ maxWidth: 170 }} value={date} onChange={(e) => setDate(e.target.value)} />
-        <input className="field__control" placeholder="Search ingredient…" style={{ maxWidth: 220 }} value={search} onChange={(e) => setSearch(e.target.value)} />
-        <button className="btn btn--primary btn--sm" onClick={exportCsv} disabled={!data}>Export CSV</button>
+        <input className="field__control" placeholder={t('Search ingredient…')} style={{ maxWidth: 220 }} value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button className="btn btn--primary btn--sm" onClick={exportCsv} disabled={!data}>{t('Export CSV')}</button>
       </div>
 
       {loading || !data ? (
-        <div className="card"><div className="empty">Loading…</div></div>
+        <div className="card"><div className="empty">{t('Loading…')}</div></div>
       ) : data.ingredients.length === 0 ? (
         <div className="card">
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">📅</span>
-            <span className="empty__title">No movements on {date}</span>
-            <span className="empty__hint">Choose another date or record sales / usage.</span>
+            <span className="empty__title">{t('No movements on {date}', { date })}</span>
+            <span className="empty__hint">{t('Choose another date or record sales / usage.')}</span>
           </div>
         </div>
       ) : (
         <div className="card card--flush">
           <div className="card__title" style={{ padding: '0 16px' }}>
-            <h3>Daily usage — {date}</h3>
-            <span className="badge badge--neutral">Cost {formatMoney(data.totals.consumptionCost)}</span>
+            <h3>{t('Daily usage — {date}', { date })}</h3>
+            <span className="badge badge--neutral">{t('Cost {cost}', { cost: formatMoney(data.totals.consumptionCost) })}</span>
           </div>
           <div className="table-wrap">
             <table className="table overview-table">
               <thead>
                 <tr>
-                  <th>Ingredient</th>
-                  <th>Opening</th>
-                  <th>Purchased</th>
-                  <th>Sales</th>
-                  <th>Waste</th>
-                  <th>Other</th>
-                  <th>Total used</th>
-                  <th>Expected</th>
-                  <th>Actual</th>
-                  <th>Diff</th>
-                  <th>Cost</th>
+                  <th>{t('Ingredient')}</th>
+                  <th>{t('Opening')}</th>
+                  <th>{t('Purchased')}</th>
+                  <th>{t('Sales')}</th>
+                  <th>{t('Waste')}</th>
+                  <th>{t('Other')}</th>
+                  <th>{t('Total used')}</th>
+                  <th>{t('Expected')}</th>
+                  <th>{t('Actual')}</th>
+                  <th>{t('Diff')}</th>
+                  <th>{t('Cost')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -597,7 +624,7 @@ function ReportTab() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td>Total</td>
+                  <td>{t('Total')}</td>
                   <td>—</td>
                   <td>—</td>
                   <td>—</td>
@@ -621,6 +648,7 @@ function ReportTab() {
 /* --------------------------- Reconciliation --------------------------- */
 
 function ReconciliationTab() {
+  const { t } = useTranslation()
   const today = todayStr()
   const [date, setDate] = useState(today)
   const [data, setData] = useState(null)
@@ -669,7 +697,7 @@ function ReconciliationTab() {
     setMsg('')
     try {
       await api('/api/usage/reconciliation', { method: 'POST', body: { date, counts } })
-      setMsg('Reconciliation saved. Stock adjusted to the counted quantities.')
+      setMsg(t('Reconciliation saved. Stock adjusted to the counted quantities.'))
       await load()
     } catch (err) {
       setError(err.message)
@@ -679,7 +707,12 @@ function ReconciliationTab() {
   }
 
   if (error && !data) return <div className="alert alert--error">{error}</div>
-  if (loading || !data) return <div className="card"><div className="empty">Loading…</div></div>
+  if (loading || !data)
+    return (
+      <div className="card">
+        <div className="empty">{t('Loading…')}</div>
+      </div>
+    )
 
   const isToday = date === today
   const reconciledCount = data.ingredients.filter((i) => i.reconciled).length
@@ -687,35 +720,43 @@ function ReconciliationTab() {
   return (
     <>
       <div className="toolbar">
-        <label style={{ fontSize: 13, color: 'var(--muted)' }}>Business date</label>
+        <label style={{ fontSize: 13, color: 'var(--muted)' }}>{t('Business date')}</label>
         <input className="field__control" type="date" style={{ maxWidth: 170 }} value={date} onChange={(e) => setDate(e.target.value)} />
-        <span className="badge badge--neutral">{reconciledCount} of {data.ingredients.length} counted</span>
+        <span className="badge badge--neutral">
+          {t('{count} of {total} counted', {
+            count: reconciledCount,
+            total: data.ingredients.length,
+          })}
+        </span>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
       {msg && <div className="alert alert--success">{msg}</div>}
       {!isToday && (
         <div className="alert alert--info">
-          You are viewing <strong>{date}</strong>. Only <strong>today</strong> can be confirmed; past days are read-only.
+          {t(
+            'You are viewing {date}. Only today can be confirmed; past days are read-only.',
+            { date },
+          )}
         </div>
       )}
 
       <div className="card card--flush">
         <div className="card__title" style={{ padding: '0 16px' }}>
-          <h3>Physical count — {date}</h3>
+          <h3>{t('Physical count — {date}', { date })}</h3>
         </div>
         {data.ingredients.length === 0 ? (
-          <div className="empty">No stock to reconcile.</div>
+          <div className="empty">{t('No stock to reconcile.')}</div>
         ) : (
           <div className="table-wrap">
             <table className="table overview-table">
               <thead>
                 <tr>
-                  <th>Ingredient</th>
-                  <th>Expected</th>
-                  <th>Actual count</th>
-                  <th>Difference</th>
-                  <th>Explanation</th>
+                  <th>{t('Ingredient')}</th>
+                  <th>{t('Expected')}</th>
+                  <th>{t('Actual count')}</th>
+                  <th>{t('Difference')}</th>
+                  <th>{t('Explanation')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -743,7 +784,7 @@ function ReconciliationTab() {
                       <td>
                         <input
                           className="field__control"
-                          placeholder="Reason (if different)"
+                          placeholder={t('Reason (if different)')}
                           value={inputs[i.ingredientId]?.note ?? ''}
                           onChange={(e) => setInput(i.ingredientId, 'note', e.target.value)}
                           disabled={!isToday}
@@ -761,23 +802,25 @@ function ReconciliationTab() {
       {isToday && (
         <div className="toolbar" style={{ marginTop: 16 }}>
           <button className="btn btn--primary" onClick={confirm} disabled={saving || counts.length === 0}>
-            {saving ? 'Saving…' : `Confirm reconciliation${counts.length ? ` (${counts.length})` : ''}`}
+            {saving
+              ? t('Saving…')
+              : `${t('Confirm reconciliation')}${counts.length ? ` (${counts.length})` : ''}`}
           </button>
           <span style={{ color: 'var(--muted)', fontSize: 13 }}>
-            Confirming creates an explicit stock adjustment for any difference.
+            {t('Confirming creates an explicit stock adjustment for any difference.')}
           </span>
         </div>
       )}
 
       <div className="card" style={{ marginTop: 20 }}>
-        <div className="card__title"><h3>Reconciliation history</h3></div>
+        <div className="card__title"><h3>{t('Reconciliation history')}</h3></div>
         {data.history.length === 0 ? (
-          <div className="empty">No reconciliations recorded yet.</div>
+          <div className="empty">{t('No reconciliations recorded yet.')}</div>
         ) : (
           <div className="table-wrap">
             <table className="table">
               <thead>
-                <tr><th>Date</th><th>Ingredient</th><th>Expected</th><th>Actual</th><th>Diff</th><th>By</th></tr>
+                <tr><th>{t('Date')}</th><th>{t('Ingredient')}</th><th>{t('Expected')}</th><th>{t('Actual')}</th><th>{t('Diff')}</th><th>{t('By')}</th></tr>
               </thead>
               <tbody>
                 {data.history.map((h) => (

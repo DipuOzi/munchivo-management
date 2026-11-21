@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney } from '../shared/units.js'
 import Modal from '../components/ui/Modal.jsx'
 
@@ -15,6 +16,7 @@ function newToken() {
 }
 
 export default function SalesPage() {
+  const { t, locale } = useTranslation()
   const [sales, setSales] = useState([])
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -59,31 +61,32 @@ export default function SalesPage() {
   return (
     <>
       <div>
-        <h1>Sales</h1>
+        <h1>{t('Sales')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Recording a sale deducts the product&apos;s recipe ingredients
-          automatically. Profits use the real cost at the moment of sale.
+          {t(
+            "Recording a sale deducts the product's recipe ingredients automatically. Profits use the real cost at the moment of sale.",
+          )}
         </p>
       </div>
 
       <div className="stat-grid">
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Orders (filtered)</span>
+            <span className="stat-card__label">{t('Orders (filtered)')}</span>
             <span className="stat-card__icon stat-card__icon--orders" aria-hidden="true">#</span>
           </div>
           <span className="stat-card__value">{summary.count}</span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Revenue (after refunds)</span>
+            <span className="stat-card__label">{t('Revenue (after refunds)')}</span>
             <span className="stat-card__icon stat-card__icon--revenue" aria-hidden="true">৳</span>
           </div>
           <span className="stat-card__value money">{formatMoney(summary.revenue)}</span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Gross profit</span>
+            <span className="stat-card__label">{t('Gross profit')}</span>
             <span className="stat-card__icon stat-card__icon--profit" aria-hidden="true">↗</span>
           </div>
           <span className="stat-card__value money">{formatMoney(summary.profit)}</span>
@@ -96,28 +99,28 @@ export default function SalesPage() {
           className="toolbar__select"
           value={filters.start}
           onChange={(e) => setFilters((f) => ({ ...f, start: e.target.value }))}
-          aria-label="From date"
+          aria-label={t('From date')}
         />
         <input
           type="date"
           className="toolbar__select"
           value={filters.end}
           onChange={(e) => setFilters((f) => ({ ...f, end: e.target.value }))}
-          aria-label="To date"
+          aria-label={t('To date')}
         />
         <select
           className="toolbar__select"
           value={filters.payment}
           onChange={(e) => setFilters((f) => ({ ...f, payment: e.target.value }))}
-          aria-label="Payment method"
+          aria-label={t('Payment method')}
         >
-          <option value="">All payments</option>
+          <option value="">{t('All payments')}</option>
           {Object.entries(PAYMENT_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
+            <option key={v} value={v}>{t(l)}</option>
           ))}
         </select>
         <button type="button" className="btn btn--primary" onClick={() => setNewSale(true)}>
-          + New Sale
+          {t('+ New Sale')}
         </button>
       </div>
 
@@ -125,13 +128,13 @@ export default function SalesPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : sales.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🧾</span>
-            <span className="empty__title">No sales recorded</span>
+            <span className="empty__title">{t('No sales recorded')}</span>
             <span className="empty__hint">
-              Record your first sale — inventory and profit update automatically.
+              {t('Record your first sale — inventory and profit update automatically.')}
             </span>
           </div>
         ) : (
@@ -139,14 +142,14 @@ export default function SalesPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Order</th>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Refunded</th>
-                  <th>Profit</th>
-                  <th>Payment</th>
-                  <th>Status</th>
+                  <th>{t('Order')}</th>
+                  <th>{t('Date')}</th>
+                  <th>{t('Items')}</th>
+                  <th>{t('Total')}</th>
+                  <th>{t('Refunded')}</th>
+                  <th>{t('Profit')}</th>
+                  <th>{t('Payment')}</th>
+                  <th>{t('Status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -158,22 +161,22 @@ export default function SalesPage() {
                         {s.orderNumber}
                       </button>
                     </td>
-                    <td>{new Date(s.saleDate).toLocaleString()}</td>
+                    <td>{new Date(s.saleDate).toLocaleString(locale)}</td>
                     <td style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {s.productNames}
                     </td>
                     <td className="money">{formatMoney(s.totalPoisha)}</td>
                     <td className="money">{s.refundPoisha ? formatMoney(s.refundPoisha) : '—'}</td>
                     <td className="money">{formatMoney(s.totalPoisha - s.refundPoisha - s.cogsPoisha)}</td>
-                    <td>{PAYMENT_LABELS[s.paymentMethod] || s.paymentMethod}</td>
+                    <td>{t(PAYMENT_LABELS[s.paymentMethod] || s.paymentMethod)}</td>
                     <td>
                       <span className={`badge ${s.status === 'confirmed' ? 'badge--success' : 'badge--neutral'}`}>
-                        {s.status === 'confirmed' ? 'Confirmed' : 'Cancelled'}
+                        {s.status === 'confirmed' ? t('Confirmed') : t('Cancelled')}
                       </span>
                     </td>
                     <td>
                       <button type="button" className="link-btn" onClick={() => setDetail(s.id)}>
-                        View
+                        {t('View')}
                       </button>
                     </td>
                   </tr>
@@ -207,6 +210,7 @@ export default function SalesPage() {
 
 /* ------------------------------------------------------------------ */
 function NewSaleForm({ products, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [lines, setLines] = useState([{ productId: '', quantity: 1 }])
   const [discount, setDiscount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('cash')
@@ -237,7 +241,7 @@ function NewSaleForm({ products, onClose, onSaved }) {
     const items = lines
       .filter((l) => l.productId && Number(l.quantity) > 0)
       .map((l) => ({ productId: l.productId, quantity: Number(l.quantity) }))
-    if (items.length === 0) return setError('Add at least one product with a quantity.')
+    if (items.length === 0) return setError(t('Add at least one product with a quantity.'))
 
     setSaving(true)
     // clientToken makes retries safe — the server never creates the same
@@ -262,21 +266,21 @@ function NewSaleForm({ products, onClose, onSaved }) {
   }
 
   return (
-    <Modal title="New Sale" onClose={onClose} wide>
+    <Modal title={t('New Sale')} onClose={onClose} wide>
       <form onSubmit={handleSubmit}>
-        <div className="section-label" style={{ marginTop: 0 }}>Products</div>
+        <div className="section-label" style={{ marginTop: 0 }}>{t('Products')}</div>
         {lines.map((line, idx) => {
           const p = productById(line.productId)
           return (
             <div className="item-row" key={idx} style={{ gridTemplateColumns: '2fr 0.5fr auto', marginBottom: 10 }}>
               <div className="field">
-                <label className="field__label">Product</label>
+                <label className="field__label">{t('Product')}</label>
                 <select
                   className="field__control"
                   value={line.productId}
                   onChange={(e) => setLine(idx, 'productId', e.target.value)}
                 >
-                  <option value="">— select —</option>
+                  <option value="">{t('— select —')}</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} — {formatMoney(p.sellingPricePoisha)}
@@ -285,7 +289,7 @@ function NewSaleForm({ products, onClose, onSaved }) {
                 </select>
               </div>
               <div className="field">
-                <label className="field__label">Qty</label>
+                <label className="field__label">{t('Qty')}</label>
                 <input
                   className="field__control"
                   type="number"
@@ -312,12 +316,12 @@ function NewSaleForm({ products, onClose, onSaved }) {
           className="link-btn"
           onClick={() => setLines((l) => [...l, { productId: '', quantity: 1 }])}
         >
-          + Add product
+          {t('+ Add product')}
         </button>
 
         <div className="form-grid">
           <div className="field">
-            <label className="field__label">Discount (৳)</label>
+            <label className="field__label">{t('Discount (৳)')}</label>
             <input
               className="field__control"
               type="number"
@@ -328,15 +332,15 @@ function NewSaleForm({ products, onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Payment method</label>
+            <label className="field__label">{t('Payment method')}</label>
             <select className="field__control" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
               {Object.entries(PAYMENT_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
+                <option key={v} value={v}>{t(l)}</option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label className="field__label">Sale date</label>
+            <label className="field__label">{t('Sale date')}</label>
             <input
               className="field__control"
               type="date"
@@ -346,24 +350,24 @@ function NewSaleForm({ products, onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <input className="field__control" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
         </div>
 
         <div className="cost-preview">
           <div className="summary-line">
-            <span>Subtotal</span>
+            <span>{t('Subtotal')}</span>
             <strong className="money">{formatMoney(totals.subtotal)}</strong>
           </div>
           {totals.discountPoisha > 0 && (
             <div className="summary-line">
-              <span>Discount</span>
+              <span>{t('Discount')}</span>
               <strong className="money">−{formatMoney(totals.discountPoisha)}</strong>
             </div>
           )}
           <div className="summary-line summary-line--total">
-            <span>Total</span>
+            <span>{t('Total')}</span>
             <strong className="money">{formatMoney(totals.total)}</strong>
           </div>
         </div>
@@ -372,10 +376,10 @@ function NewSaleForm({ products, onClose, onSaved }) {
 
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Recording…' : 'Record sale'}
+            {saving ? t('Recording…') : t('Record sale')}
           </button>
         </div>
       </form>
@@ -385,6 +389,7 @@ function NewSaleForm({ products, onClose, onSaved }) {
 
 /* ------------------------------------------------------------------ */
 function SaleDetail({ saleId, onClose, onChanged }) {
+  const { t, locale } = useTranslation()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [refundOpen, setRefundOpen] = useState(false)
@@ -396,7 +401,8 @@ function SaleDetail({ saleId, onClose, onChanged }) {
   }, [saleId])
 
   async function cancelSale() {
-    if (!confirm('Cancel this order? ALL inventory deductions will be reversed.')) return
+    if (!confirm(t('Cancel this order? ALL inventory deductions will be reversed.')))
+      return
     try {
       await api(`/api/sales/${saleId}`, { method: 'DELETE' })
       onClose()
@@ -407,16 +413,19 @@ function SaleDetail({ saleId, onClose, onChanged }) {
   }
 
   return (
-    <Modal title={`Order ${data?.sale?.orderNumber || '…'}`} onClose={onClose}>
+    <Modal
+      title={t('Order {number}', { number: data?.sale?.orderNumber || '…' })}
+      onClose={onClose}
+    >
       {error && <div className="alert alert--error">{error}</div>}
       {!data ? (
-        <div className="empty">Loading…</div>
+        <div className="empty">{t('Loading…')}</div>
       ) : (
         <>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 12px' }}>
-            {new Date(data.sale.saleDate).toLocaleString()} · {' '}
-            {PAYMENT_LABELS[data.sale.paymentMethod] || data.sale.paymentMethod} · {' '}
-            recorded by {data.sale.creatorName || '—'}
+            {new Date(data.sale.saleDate).toLocaleString(locale)} ·{' '}
+            {t(PAYMENT_LABELS[data.sale.paymentMethod] || data.sale.paymentMethod)} ·{' '}
+            {t('recorded by')} {data.sale.creatorName || '—'}
           </p>
           {data.items.map((it) => (
             <div className="summary-line" key={it.id}>
@@ -427,26 +436,26 @@ function SaleDetail({ saleId, onClose, onChanged }) {
             </div>
           ))}
           <div className="summary-line">
-            <span>Discount</span>
+            <span>{t('Discount')}</span>
             <strong className="money">−{formatMoney(data.sale.discountPoisha)}</strong>
           </div>
           {data.sale.refundPoisha > 0 && (
             <div className="summary-line">
-              <span>Refunded</span>
+              <span>{t('Refunded')}</span>
               <strong className="money">−{formatMoney(data.sale.refundPoisha)}</strong>
             </div>
           )}
           <div className="summary-line summary-line--total">
-            <span>Total</span>
+            <span>{t('Total')}</span>
             <strong className="money">{formatMoney(data.sale.totalPoisha - data.sale.refundPoisha)}</strong>
           </div>
 
           {data.refunds.length > 0 && (
             <>
-              <div className="section-label">Refund history</div>
+              <div className="section-label">{t('Refund history')}</div>
               {data.refunds.map((r) => (
                 <div className="summary-line" key={r.id}>
-                  <span>{r.reason || 'Refund'}</span>
+                  <span>{r.reason || t('Refund')}</span>
                   <strong className="money">{formatMoney(r.amountPoisha)}</strong>
                 </div>
               ))}
@@ -461,10 +470,10 @@ function SaleDetail({ saleId, onClose, onChanged }) {
                 onClick={() => setRefundOpen(true)}
                 disabled={data.sale.refundPoisha >= data.sale.totalPoisha}
               >
-                Record refund
+                {t('Record refund')}
               </button>
               <button type="button" className="btn btn--danger" onClick={cancelSale}>
-                Cancel order
+                {t('Cancel order')}
               </button>
             </div>
           )}
@@ -488,6 +497,7 @@ function SaleDetail({ saleId, onClose, onChanged }) {
 
 /* ------------------------------------------------------------------ */
 function RefundForm({ sale, onClose, onSaved }) {
+  const { t, locale } = useTranslation()
   const refundable = (sale.totalPoisha - sale.refundPoisha) / 100
   const [amount, setAmount] = useState(String(refundable))
   const [reason, setReason] = useState('')
@@ -497,7 +507,7 @@ function RefundForm({ sale, onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!amount || Number(amount) <= 0) return setError('Enter a refund amount.')
+    if (!amount || Number(amount) <= 0) return setError(t('Enter a refund amount.'))
     setSaving(true)
     try {
       await api(`/api/sales/${sale.id}/refunds`, {
@@ -512,15 +522,17 @@ function RefundForm({ sale, onClose, onSaved }) {
   }
 
   return (
-    <Modal title="Record refund" onClose={onClose}>
+    <Modal title={t('Record refund')} onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-          Refunds are financial only — perishable goods are not returned to
-          inventory. Refundable: <strong>৳{refundable.toLocaleString()}</strong>
+          {t(
+            'Refunds are financial only — perishable goods are not returned to inventory. Refundable:',
+          )}{' '}
+          <strong>৳{refundable.toLocaleString(locale)}</strong>
         </p>
         <div className="form-grid">
           <div className="field">
-            <label className="field__label">Amount (৳)</label>
+            <label className="field__label">{t('Amount (৳)')}</label>
             <input
               className="field__control"
               type="number"
@@ -532,10 +544,10 @@ function RefundForm({ sale, onClose, onSaved }) {
             />
           </div>
           <div className="field">
-            <label className="field__label">Reason</label>
+            <label className="field__label">{t('Reason')}</label>
             <input
               className="field__control"
-              placeholder="e.g. customer returned item"
+              placeholder={t('e.g. customer returned item')}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -544,10 +556,10 @@ function RefundForm({ sale, onClose, onSaved }) {
         {error && <div className="alert alert--error">{error}</div>}
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Record refund'}
+            {saving ? t('Saving…') : t('Record refund')}
           </button>
         </div>
       </form>

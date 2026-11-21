@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty } from '../shared/units.js'
 import Modal from '../components/ui/Modal.jsx'
 
@@ -14,6 +15,7 @@ const EMPTY = {
 }
 
 export default function ProductsPage() {
+  const { t } = useTranslation()
   const [rows, setRows] = useState([])
   const [recipes, setRecipes] = useState([])
   const [categories, setCategories] = useState([])
@@ -47,10 +49,11 @@ export default function ProductsPage() {
   return (
     <>
       <div>
-        <h1>Products</h1>
+        <h1>{t('Products')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Your sellable menu. Profits below are estimates from current ingredient
-          costs — realized profits arrive with the Sales module.
+          {t(
+            'Your sellable menu. Profits below are estimates from current ingredient costs — realized profits arrive with the Sales module.',
+          )}
         </p>
       </div>
 
@@ -60,12 +63,12 @@ export default function ProductsPage() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-          <option value="all">All</option>
+          <option value="active">{t('Active')}</option>
+          <option value="archived">{t('Archived')}</option>
+          <option value="all">{t('All')}</option>
         </select>
         <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
-          + Add Product
+          {t('+ Add Product')}
         </button>
       </div>
 
@@ -73,14 +76,15 @@ export default function ProductsPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : rows.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🥪</span>
-            <span className="empty__title">No products yet</span>
+            <span className="empty__title">{t('No products yet')}</span>
             <span className="empty__hint">
-              Create your menu — assign a recipe to each product to see live
-              profitability estimates.
+              {t(
+                'Create your menu — assign a recipe to each product to see live profitability estimates.',
+              )}
             </span>
           </div>
         ) : (
@@ -88,13 +92,13 @@ export default function ProductsPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Category</th>
-                    <th>Recipe</th>
-                    <th>Price</th>
-                    <th>Est. cost</th>
-                    <th>Est. margin</th>
-                  <th>Status</th>
+                  <th>{t('Product')}</th>
+                  <th>{t('Category')}</th>
+                    <th>{t('Recipe')}</th>
+                    <th>{t('Price')}</th>
+                    <th>{t('Est. cost')}</th>
+                    <th>{t('Est. margin')}</th>
+                  <th>{t('Status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -126,20 +130,19 @@ export default function ProductsPage() {
                     </td>
                     <td>
                       <span className={`badge ${p.status === 'active' ? 'badge--success' : 'badge--neutral'}`}>
-                        {p.status === 'active' ? 'Active' : 'Archived'}
+                        {p.status === 'active' ? t('Active') : t('Archived')}
                       </span>
                     </td>
                     <td>
-                      <div className="inline-actions">
-                        <button type="button" className="link-btn" onClick={() => setEditing(p)}>
-                          Edit
+                      <div className="inline-actions">                          <button type="button" className="link-btn" onClick={() => setEditing(p)}>
+                          {t('Edit')}
                         </button>
                         {p.status === 'active' && (
                           <button
                             type="button"
                             className="link-btn link-btn--danger"
                             onClick={async () => {
-                              if (!confirm(`Archive "${p.name}"? Sales history is kept.`)) return
+                              if (!confirm(t('Archive "{name}"? Sales history is kept.', { name: p.name }))) return
                               try {
                                 await api(`/api/products/${p.id}`, { method: 'DELETE' })
                                 load()
@@ -148,7 +151,7 @@ export default function ProductsPage() {
                               }
                             }}
                           >
-                            Archive
+                            {t('Archive')}
                           </button>
                         )}
                       </div>
@@ -180,6 +183,7 @@ export default function ProductsPage() {
 
 /* ------------------------------------------------------------------ */
 function ProductForm({ product, recipes, categories, onCategoryCreated, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState(() => {
     if (!product) return EMPTY
     return {
@@ -216,9 +220,9 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!form.name.trim()) return setError('Product name is required.')
+    if (!form.name.trim()) return setError(t('Product name is required.'))
     if (!form.sellingPrice || Number(form.sellingPrice) <= 0)
-      return setError('Selling price must be greater than zero.')
+      return setError(t('Selling price must be greater than zero.'))
 
     setSaving(true)
     try {
@@ -236,22 +240,26 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
   }
 
   return (
-    <Modal title={product ? `Edit ${product.name}` : 'Add Product'} onClose={onClose} wide>
+    <Modal
+      title={product ? t('Edit {name}', { name: product.name }) : t('Add Product')}
+      onClose={onClose}
+      wide
+    >
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field field--full">
-            <label className="field__label">Product name *</label>
+            <label className="field__label">{t('Product name *')}</label>
             <input
               className="field__control"
-              placeholder="e.g. Egg Sando"
+              placeholder={t('e.g. Egg Sando')}
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
             />
           </div>
           <div className="field">
-            <label className="field__label">Category</label>
+            <label className="field__label">{t('Category')}</label>
             <select className="field__control" value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
-              <option value="">— none —</option>
+              <option value="">{t('— none —')}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -260,21 +268,21 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
             </select>
           </div>
           <div className="field">
-            <label className="field__label">Or create new category</label>
+            <label className="field__label">{t('Or create new category')}</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 className="field__control"
-                placeholder="e.g. Sandwiches"
+                placeholder={t('e.g. Sandwiches')}
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
               />
               <button type="button" className="btn btn--ghost btn--sm" onClick={handleNewCategory} disabled={!newCategory.trim()}>
-                Add
+                {t('Add')}
               </button>
             </div>
           </div>
           <div className="field">
-            <label className="field__label">Selling price (৳) *</label>
+            <label className="field__label">{t('Selling price (৳) *')}</label>
             <input
               className="field__control"
               type="number"
@@ -285,9 +293,9 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
             />
           </div>
           <div className="field">
-            <label className="field__label">Assigned recipe</label>
+            <label className="field__label">{t('Assigned recipe')}</label>
             <select className="field__control" value={form.recipeId} onChange={(e) => set('recipeId', e.target.value)}>
-              <option value="">— none —</option>
+              <option value="">{t('— none —')}</option>
               {recipes.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name} ({formatQty(r.baseYieldBase, r.yieldUnit)})
@@ -296,7 +304,7 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
             </select>
           </div>
           <div className="field">
-            <label className="field__label">Packaging cost per serving (৳)</label>
+            <label className="field__label">{t('Packaging cost per serving (৳)')}</label>
             <input
               className="field__control"
               type="number"
@@ -307,7 +315,7 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
             />
           </div>
           <div className="field field--full">
-            <label className="field__label">Description</label>
+            <label className="field__label">{t('Description')}</label>
             <input
               className="field__control"
               value={form.description}
@@ -315,7 +323,7 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
             />
           </div>
           <div className="field field--full">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <textarea className="field__control" rows="2" value={form.notes} onChange={(e) => set('notes', e.target.value)} />
           </div>
         </div>
@@ -324,10 +332,10 @@ function ProductForm({ product, recipes, categories, onCategoryCreated, onClose,
 
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : product ? 'Save changes' : 'Add product'}
+            {saving ? t('Saving…') : product ? t('Save changes') : t('Add product')}
           </button>
         </div>
       </form>

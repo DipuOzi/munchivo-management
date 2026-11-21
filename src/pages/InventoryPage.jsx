@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, formatQty } from '../shared/units.js'
 import Modal from '../components/ui/Modal.jsx'
 import IngredientForm from '../components/IngredientForm.jsx'
@@ -28,6 +29,7 @@ const STOCK_MOVEMENT_LABELS = {
 }
 
 export default function InventoryPage() {
+  const { t } = useTranslation()
   const [rows, setRows] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -75,7 +77,14 @@ export default function InventoryPage() {
   }
 
   async function archive(ingredient) {
-    if (!confirm(`Archive "${ingredient.name}"? History is kept; it can be restored anytime.`)) return
+    if (
+      !confirm(
+        t('Archive "{name}"? History is kept; it can be restored anytime.', {
+          name: ingredient.name,
+        }),
+      )
+    )
+      return
     try {
       await api(`/api/ingredients/${ingredient.id}`, { method: 'DELETE' })
       load()
@@ -97,12 +106,21 @@ export default function InventoryPage() {
   return (
     <>
       <div>
-        <h1 style={{ marginBottom: 12 }}>Inventory</h1>
+        <h1 style={{ marginBottom: 12 }}>{t('Inventory')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          {rows.length} ingredient{rows.length === 1 ? '' : 's'} · Inventory value{' '}
+          {t(rows.length === 1 ? '{count} ingredient' : '{count} ingredients', {
+            count: rows.length,
+          })}{' '}
+          · {t('Inventory value')}{' '}
           <strong className="money">{formatMoney(totals.value)}</strong>
           {totals.low > 0 && (
-            <> · <span className="stock-low">{totals.low} running low</span></>
+            <>
+              {' '}
+              ·{' '}
+              <span className="stock-low">
+                {t('{count} running low', { count: totals.low })}
+              </span>
+            </>
           )}
         </p>
       </div>
@@ -110,7 +128,7 @@ export default function InventoryPage() {
       <div className="toolbar">
         <input
           className="field__control toolbar__search"
-          placeholder="Search ingredients…"
+          placeholder={t('Search ingredients…')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -119,7 +137,7 @@ export default function InventoryPage() {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
-          <option value="">All categories</option>
+          <option value="">{t('All categories')}</option>
           {categories.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -131,12 +149,12 @@ export default function InventoryPage() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-          <option value="all">All</option>
+          <option value="active">{t('Active')}</option>
+          <option value="archived">{t('Archived')}</option>
+          <option value="all">{t('All')}</option>
         </select>
         <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
-          + Add Ingredient
+          {t('+ Add Ingredient')}
         </button>
       </div>
 
@@ -144,14 +162,15 @@ export default function InventoryPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : rows.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🥗</span>
-            <span className="empty__title">No ingredients yet</span>
+            <span className="empty__title">{t('No ingredients yet')}</span>
             <span className="empty__hint">
-              Add your first ingredient — for example Potato with 20 kg and a
-              low-stock threshold of 7 kg.
+              {t(
+                'Add your first ingredient — for example Potato with 20 kg and a low-stock threshold of 7 kg.',
+              )}
             </span>
           </div>
         ) : (
@@ -159,12 +178,12 @@ export default function InventoryPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Ingredient</th>
-                  <th>Category</th>
-                  <th>Stock</th>
-                  <th>Avg Cost</th>
-                  <th>Value</th>
-                  <th>Status</th>
+                  <th>{t('Ingredient')}</th>
+                  <th>{t('Category')}</th>
+                  <th>{t('Stock')}</th>
+                  <th>{t('Avg Cost')}</th>
+                  <th>{t('Value')}</th>
+                  <th>{t('Status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -180,13 +199,13 @@ export default function InventoryPage() {
                       <td>
                         <strong>{r.name}</strong>
                         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                          {r.trackExpiry ? 'Expiry tracked' : ''}
+                          {r.trackExpiry ? t('Expiry tracked') : ''}
                         </div>
                       </td>
                       <td>{r.category}</td>
                       <td className={isLow || isBelowMin ? 'stock-low' : 'stock-ok'}>
                         {formatQty(r.currentStockBase, r.displayUnit)}
-                        {isBelowMin ? ' · below min' : isLow ? ' · low' : ''}
+                        {isBelowMin ? t(' · below min') : isLow ? t(' · low') : ''}
                       </td>
                       <td className="money">
                         {formatMoney(r.avgCostPoisha)}/{r.displayUnit}
@@ -194,17 +213,17 @@ export default function InventoryPage() {
                       <td className="money">{formatMoney(r.currentStockBase * r.avgCostPoisha)}</td>
                       <td>
                         {r.status === 'archived' ? (
-                          <span className="badge badge--neutral">Archived</span>
+                          <span className="badge badge--neutral">{t('Archived')}</span>
                         ) : isLow || isBelowMin ? (
-                          <span className="badge badge--danger">Low stock</span>
+                          <span className="badge badge--danger">{t('Low stock')}</span>
                         ) : (
-                          <span className="badge badge--success">Healthy</span>
+                          <span className="badge badge--success">{t('Healthy')}</span>
                         )}
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <div className="inline-actions">
                           <button type="button" className="link-btn" onClick={() => setEditing(r)}>
-                            Edit
+                            {t('Edit')}
                           </button>
                           {r.status === 'active' && (
                             <button
@@ -212,7 +231,7 @@ export default function InventoryPage() {
                               className="link-btn link-btn--danger"
                               onClick={() => archive(r)}
                             >
-                              Archive
+                              {t('Archive')}
                             </button>
                           )}
                           {r.status === 'archived' && (
@@ -227,7 +246,7 @@ export default function InventoryPage() {
                                 load()
                               }}
                             >
-                              Restore
+                              {t('Restore')}
                             </button>
                           )}
                         </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
+import { useTranslation } from '../lib/i18n.jsx'
 import { formatMoney, poishaToTaka } from '../shared/units.js'
 import { formatDate, monthISO, todayISO } from '../shared/dates.js'
 import Modal from '../components/ui/Modal.jsx'
@@ -25,6 +26,7 @@ const PAID_OPTIONS = [
 ]
 
 export default function ExpensesPage() {
+  const { t, locale } = useTranslation()
   const [rows, setRows] = useState([])
   const [summary, setSummary] = useState(null)
   const [categories, setCategories] = useState([])
@@ -105,7 +107,13 @@ export default function ExpensesPage() {
   }
 
   async function cancelExpense(expense) {
-    if (!confirm(`Cancel "${expense.description}"? The record stays in history.`)) {
+    if (
+      !confirm(
+        t('Cancel "{description}"? The record stays in history.', {
+          description: expense.description,
+        }),
+      )
+    ) {
       return
     }
     setBusyId(expense.id)
@@ -139,49 +147,54 @@ export default function ExpensesPage() {
   return (
     <>
       <div>
-        <h1>Expenses</h1>
+        <h1>{t('Expenses')}</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
-          Rent, utilities, salaries, marketing and every other operating cost.
-          Ingredient purchases are tracked separately under Purchases.
+          {t(
+            'Rent, utilities, salaries, marketing and every other operating cost. Ingredient purchases are tracked separately under Purchases.',
+          )}
         </p>
       </div>
 
       <div className="stat-grid">
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Expenses this month</span>
+            <span className="stat-card__label">{t('Expenses this month')}</span>
             <span className="stat-card__icon stat-card__icon--inventory" aria-hidden="true">৳</span>
           </div>
           <span className="stat-card__value money">{formatMoney(s.totalPoisha)}</span>
-          <span className="stat-card__hint">{s.count} record{s.count === 1 ? '' : 's'}</span>
+          <span className="stat-card__hint">
+            {t(s.count === 1 ? '{count} record' : '{count} records', { count: s.count })}
+          </span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Unpaid</span>
+            <span className="stat-card__label">{t('Unpaid')}</span>
             <span className="stat-card__icon stat-card__icon--orders" aria-hidden="true">!</span>
           </div>
           <span className={`stat-card__value money${s.unpaidPoisha > 0 ? ' stock-low' : ''}`}>
             {formatMoney(s.unpaidPoisha)}
           </span>
           <span className="stat-card__hint">
-            {s.unpaidCount} unpaid bill{s.unpaidCount === 1 ? '' : 's'}
+            {t(s.unpaidCount === 1 ? '{count} unpaid bill' : '{count} unpaid bills', {
+              count: s.unpaidCount,
+            })}
           </span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Paid</span>
+            <span className="stat-card__label">{t('Paid')}</span>
             <span className="stat-card__icon stat-card__icon--profit" aria-hidden="true">✓</span>
           </div>
           <span className="stat-card__value money">{formatMoney(s.paidPoisha)}</span>
-          <span className="stat-card__hint">Settled this month</span>
+          <span className="stat-card__hint">{t('Settled this month')}</span>
         </div>
         <div className="card stat-card">
           <div className="stat-card__top">
-            <span className="stat-card__label">Categories</span>
+            <span className="stat-card__label">{t('Categories')}</span>
             <span className="stat-card__icon stat-card__icon--revenue" aria-hidden="true">▦</span>
           </div>
           <span className="stat-card__value">{categories.length}</span>
-          <span className="stat-card__hint">Operating cost types</span>
+          <span className="stat-card__hint">{t('Operating cost types')}</span>
         </div>
       </div>
 
@@ -191,15 +204,15 @@ export default function ExpensesPage() {
           className="toolbar__select"
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          aria-label="Expense month"
+          aria-label={t('Expense month')}
         />
         <select
           className="toolbar__select"
           value={filters.categoryId}
           onChange={(e) => setFilter('categoryId', e.target.value)}
-          aria-label="Filter by category"
+          aria-label={t('Filter by category')}
         >
-          <option value="">All categories</option>
+          <option value="">{t('All categories')}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
@@ -208,31 +221,31 @@ export default function ExpensesPage() {
           className="toolbar__select"
           value={filters.status}
           onChange={(e) => setFilter('status', e.target.value)}
-          aria-label="Filter by status"
+          aria-label={t('Filter by status')}
         >
           {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>{t(o.label)}</option>
           ))}
         </select>
         <select
           className="toolbar__select"
           value={filters.paid}
           onChange={(e) => setFilter('paid', e.target.value)}
-          aria-label="Filter by payment"
+          aria-label={t('Filter by payment')}
         >
           {PAID_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>{t(o.label)}</option>
           ))}
         </select>
         <input
           className="field__control toolbar__search"
-          placeholder="Search description…"
+          placeholder={t('Search description…')}
           value={filters.search}
           onChange={(e) => setFilter('search', e.target.value)}
-          aria-label="Search expenses"
+          aria-label={t('Search expenses')}
         />
         <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
-          + Add Expense
+          {t('+ Add Expense')}
         </button>
       </div>
 
@@ -240,14 +253,15 @@ export default function ExpensesPage() {
 
       <div className="card card--flush">
         {loading ? (
-          <div className="empty">Loading…</div>
+          <div className="empty">{t('Loading…')}</div>
         ) : rows.length === 0 ? (
           <div className="empty">
             <span className="empty__icon" aria-hidden="true">🧾</span>
-            <span className="empty__title">No expenses recorded</span>
+            <span className="empty__title">{t('No expenses recorded')}</span>
             <span className="empty__hint">
-              Add rent, utility bills, salaries and other running costs so your
-              Reports page can show a true net profit.
+              {t(
+                'Add rent, utility bills, salaries and other running costs so your Reports page can show a true net profit.',
+              )}
             </span>
           </div>
         ) : (
@@ -255,35 +269,40 @@ export default function ExpensesPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th>Payment</th>
-                  <th>Status</th>
-                  <th>Amount</th>
-                  <th>Recorded by</th>
+                  <th>{t('Date')}</th>
+                  <th>{t('Description')}</th>
+                  <th>{t('Category')}</th>
+                  <th>{t('Payment')}</th>
+                  <th>{t('Status')}</th>
+                  <th>{t('Amount')}</th>
+                  <th>{t('Recorded by')}</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className={row.status === 'cancelled' ? 'row-muted' : ''}>
-                    <td>{formatDate(row.expenseDate)}</td>
+                    <td>{formatDate(row.expenseDate, locale)}</td>
                     <td>
                       <strong>{row.description}</strong>
                       {row.notes && (
                         <div className="cell-sub">{row.notes}</div>
                       )}
                     </td>
-                    <td>{row.categoryName || 'Uncategorised'}</td>
-                    <td className="cell-capitalize">{row.paymentMethod}</td>
+                    <td>{row.categoryName || t('Uncategorised')}</td>
+                    <td className="cell-capitalize">
+                      {t(
+                        PAYMENT_METHODS.find((m) => m.value === row.paymentMethod)?.label ||
+                          row.paymentMethod,
+                      )}
+                    </td>
                     <td>
                       {row.status === 'cancelled' ? (
-                        <span className="badge badge--neutral">Cancelled</span>
+                        <span className="badge badge--neutral">{t('Cancelled')}</span>
                       ) : row.isPaid ? (
-                        <span className="badge badge--success">Paid</span>
+                        <span className="badge badge--success">{t('Paid')}</span>
                       ) : (
-                        <span className="badge badge--warning">Unpaid</span>
+                        <span className="badge badge--warning">{t('Unpaid')}</span>
                       )}
                     </td>
                     <td className="money">
@@ -302,7 +321,7 @@ export default function ExpensesPage() {
                             className="link-btn"
                             onClick={() => setEditing(row)}
                           >
-                            Edit
+                            {t('Edit')}
                           </button>
                           <button
                             type="button"
@@ -310,7 +329,7 @@ export default function ExpensesPage() {
                             disabled={busyId === row.id}
                             onClick={() => markPaid(row, !row.isPaid)}
                           >
-                            {row.isPaid ? 'Mark unpaid' : 'Mark paid'}
+                            {row.isPaid ? t('Mark unpaid') : t('Mark paid')}
                           </button>
                           <button
                             type="button"
@@ -318,7 +337,7 @@ export default function ExpensesPage() {
                             disabled={busyId === row.id}
                             onClick={() => cancelExpense(row)}
                           >
-                            Cancel
+                            {t('Cancel')}
                           </button>
                         </div>
                       )}
@@ -350,6 +369,7 @@ export default function ExpensesPage() {
 
 /* ------------------------------------------------------------------ */
 function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved }) {
+  const { t } = useTranslation()
   const [form, setForm] = useState(() =>
     expense
       ? {
@@ -407,12 +427,12 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!form.description.trim()) return setError('Description is required.')
+    if (!form.description.trim()) return setError(t('Description is required.'))
     if (!form.amount || Number(form.amount) <= 0) {
-      return setError('Amount must be greater than zero.')
+      return setError(t('Amount must be greater than zero.'))
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.expenseDate)) {
-      return setError('Choose a valid expense date.')
+      return setError(t('Choose a valid expense date.'))
     }
 
     setSaving(true)
@@ -440,14 +460,14 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
   }
 
   return (
-    <Modal title={expense ? 'Edit expense' : 'Add expense'} onClose={onClose}>
+    <Modal title={expense ? t('Edit expense') : t('Add expense')} onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="field field--full">
-            <label className="field__label">Description *</label>
+            <label className="field__label">{t('Description *')}</label>
             <input
               className="field__control"
-              placeholder="e.g. Electricity bill — November"
+              placeholder={t('e.g. Electricity bill — November')}
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               autoFocus
@@ -455,7 +475,7 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
           </div>
 
           <div className="field field--full">
-            <label className="field__label">Category</label>
+            <label className="field__label">{t('Category')}</label>
             <div className="inline-actions" style={{ alignItems: 'center' }}>
               <select
                 className="field__control"
@@ -463,7 +483,7 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
                 onChange={(e) => set('categoryId', e.target.value)}
                 style={{ flex: 1 }}
               >
-                <option value="">Uncategorised</option>
+                <option value="">{t('Uncategorised')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -473,14 +493,14 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
                 className="btn btn--ghost btn--sm"
                 onClick={() => setShowNewCategory((v) => !v)}
               >
-                {showNewCategory ? 'Close' : '+ New category'}
+                {showNewCategory ? t('Close') : t('+ New category')}
               </button>
             </div>
             {showNewCategory && (
               <div className="inline-actions" style={{ marginTop: 6 }}>
                 <input
                   className="field__control"
-                  placeholder="New category name"
+                  placeholder={t('New category name')}
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   onKeyDown={(e) => {
@@ -497,14 +517,14 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
                   onClick={addCategory}
                   disabled={categoryBusy}
                 >
-                  {categoryBusy ? 'Adding…' : 'Add'}
+                  {categoryBusy ? t('Adding…') : t('Add')}
                 </button>
               </div>
             )}
           </div>
 
           <div className="field">
-            <label className="field__label">Amount (৳) *</label>
+            <label className="field__label">{t('Amount (৳) *')}</label>
             <input
               className="field__control"
               type="number"
@@ -516,7 +536,7 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
           </div>
 
           <div className="field">
-            <label className="field__label">Date *</label>
+            <label className="field__label">{t('Date *')}</label>
             <input
               className="field__control"
               type="date"
@@ -529,33 +549,33 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
           </div>
 
           <div className="field">
-            <label className="field__label">Payment method</label>
+            <label className="field__label">{t('Payment method')}</label>
             <select
               className="field__control"
               value={form.paymentMethod}
               onChange={(e) => set('paymentMethod', e.target.value)}
             >
               {PAYMENT_METHODS.map((m) => (
-                <option key={m.value} value={m.value}>{m.label}</option>
+                <option key={m.value} value={m.value}>{t(m.label)}</option>
               ))}
             </select>
           </div>
 
           <div className="field">
-            <label className="field__label">Payment status</label>
+            <label className="field__label">{t('Payment status')}</label>
             <label className="check-row">
               <input
                 type="checkbox"
                 checked={form.isPaid}
                 onChange={(e) => set('isPaid', e.target.checked)}
               />
-              <span>Already paid</span>
+              <span>{t('Already paid')}</span>
             </label>
           </div>
 
           {form.isPaid && (
             <div className="field">
-              <label className="field__label">Paid on</label>
+              <label className="field__label">{t('Paid on')}</label>
               <input
                 className="field__control"
                 type="date"
@@ -566,11 +586,11 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
           )}
 
           <div className="field field--full">
-            <label className="field__label">Notes</label>
+            <label className="field__label">{t('Notes')}</label>
             <textarea
               className="field__control"
               rows="2"
-              placeholder="Optional reference, invoice number or note"
+              placeholder={t('Optional reference, invoice number or note')}
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
             />
@@ -581,10 +601,10 @@ function ExpenseForm({ expense, categories, onCategoryCreated, onClose, onSaved 
 
         <div className="modal__actions">
           <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : expense ? 'Save changes' : 'Add expense'}
+            {saving ? t('Saving…') : expense ? t('Save changes') : t('Add expense')}
           </button>
         </div>
       </form>
