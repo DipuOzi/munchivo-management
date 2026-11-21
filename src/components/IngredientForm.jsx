@@ -6,7 +6,7 @@ import Modal from './ui/Modal.jsx'
  * Create/edit ingredient form — used by the Inventory page and
  * inline from the Recipe builder ("create ingredient on the fly").
  */
-export default function IngredientForm({ ingredient, suppliers = [], onClose, onSaved }) {
+export default function IngredientForm({ ingredient, onClose, onSaved }) {
   const [form, setForm] = useState(() => {
     if (!ingredient) {
       return {
@@ -17,7 +17,6 @@ export default function IngredientForm({ ingredient, suppliers = [], onClose, on
         initialTotalCost: '',
         lowStockThreshold: '',
         minStock: '',
-        supplierId: '',
         storageLocation: '',
         trackExpiry: false,
         notes: '',
@@ -29,7 +28,6 @@ export default function IngredientForm({ ingredient, suppliers = [], onClose, on
       displayUnit: ingredient.displayUnit,
       lowStockThreshold: String(ingredient.lowStockThresholdBase || ''),
       minStock: String(ingredient.minStockBase || ''),
-      supplierId: ingredient.supplierId || '',
       storageLocation: ingredient.storageLocation || '',
       trackExpiry: ingredient.trackExpiry,
       notes: ingredient.notes || '',
@@ -54,7 +52,6 @@ export default function IngredientForm({ ingredient, suppliers = [], onClose, on
       displayUnit: form.displayUnit,
       lowStockThreshold: form.lowStockThreshold || 0,
       minStock: form.minStock || 0,
-      supplierId: form.supplierId || null,
       storageLocation: form.storageLocation,
       trackExpiry: form.trackExpiry,
       notes: form.notes,
@@ -165,21 +162,6 @@ export default function IngredientForm({ ingredient, suppliers = [], onClose, on
               value={form.minStock}
               onChange={(e) => set('minStock', e.target.value)}
             />
-          </div>
-          <div className="field">
-            <label className="field__label">Supplier</label>
-            <select
-              className="field__control"
-              value={form.supplierId}
-              onChange={(e) => set('supplierId', e.target.value)}
-            >
-              <option value="">— none —</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
           </div>
           <div className="field">
             <label className="field__label">Storage location</label>

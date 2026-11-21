@@ -5,7 +5,6 @@ import LoginPage from './pages/LoginPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import OverviewPage from './pages/OverviewPage.jsx'
 import InventoryPage from './pages/InventoryPage.jsx'
-import SuppliersPage from './pages/SuppliersPage.jsx'
 import PurchasesPage from './pages/PurchasesPage.jsx'
 import RecipesPage from './pages/RecipesPage.jsx'
 import CalculatorPage from './pages/CalculatorPage.jsx'
@@ -64,7 +63,6 @@ export default function App() {
         <Route path="overview" element={<OverviewPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
-        <Route path="suppliers" element={<SuppliersPage />} />
         <Route path="recipes" element={<RecipesPage />} />
         <Route path="calculator" element={<CalculatorPage />} />
         <Route path="products" element={<ProductsPage />} />

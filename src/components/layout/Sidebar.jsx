@@ -15,7 +15,6 @@ const NAV_SECTIONS = [
     items: [
       { to: '/inventory', label: 'Inventory', icon: 'box' },
       { to: '/purchases', label: 'Purchases', icon: 'cart' },
-      { to: '/suppliers', label: 'Suppliers', icon: 'truck' },
       { to: '/recipes', label: 'Recipes', icon: 'book' },
       { to: '/calculator', label: 'Calculator', icon: 'calc' },
       { to: '/products', label: 'Products', icon: 'tag' },

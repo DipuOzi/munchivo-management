@@ -469,7 +469,6 @@ function RecipeForm({ recipe, ingredients, onIngredientCreated, onClose, onSaved
 
       {newIngOpen && (
         <IngredientForm
-          suppliers={[]}
           onClose={() => setNewIngOpen(false)}
           onSaved={() => {
             setNewIngOpen(false)

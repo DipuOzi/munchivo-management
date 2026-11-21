@@ -12,7 +12,6 @@ const EMPTY_FORM = {
   initialTotalCost: '',
   lowStockThreshold: '',
   minStock: '',
-  supplierId: '',
   storageLocation: '',
   trackExpiry: false,
   notes: '',
@@ -31,7 +30,6 @@ const STOCK_MOVEMENT_LABELS = {
 export default function InventoryPage() {
   const [rows, setRows] = useState([])
   const [categories, setCategories] = useState([])
-  const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
@@ -63,12 +61,6 @@ export default function InventoryPage() {
   useEffect(() => {
     load()
   }, [load])
-
-  useEffect(() => {
-    api('/api/suppliers')
-      .then((d) => setSuppliers(d.suppliers.filter((s) => s.isActive)))
-      .catch(() => {})
-  }, [])
 
   async function openDetail(id) {
     setDetailId(id)
@@ -188,8 +180,7 @@ export default function InventoryPage() {
                       <td>
                         <strong>{r.name}</strong>
                         <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                          {r.supplierName ? `Supplier: ${r.supplierName}` : 'No supplier'}
-                          {r.trackExpiry ? ' · expiry tracked' : ''}
+                          {r.trackExpiry ? 'Expiry tracked' : ''}
                         </div>
                       </td>
                       <td>{r.category}</td>
@@ -253,7 +244,6 @@ export default function InventoryPage() {
       {editing && (
         <IngredientForm
           ingredient={editing === 'new' ? null : editing}
-          suppliers={suppliers}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null)

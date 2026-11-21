@@ -19,7 +19,6 @@ function blankItem() {
 export default function PurchasesPage() {
   const [rows, setRows] = useState([])
   const [ingredients, setIngredients] = useState([])
-  const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
@@ -29,14 +28,12 @@ export default function PurchasesPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [pur, ing, sup] = await Promise.all([
+      const [pur, ing] = await Promise.all([
         api(`/api/purchases?status=${statusFilter}`),
         api('/api/ingredients?status=all'),
-        api('/api/suppliers'),
       ])
       setRows(pur.purchases)
       setIngredients(ing.ingredients.filter((i) => i.status === 'active'))
-      setSuppliers(sup.suppliers.filter((s) => s.isActive))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -102,7 +99,6 @@ export default function PurchasesPage() {
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Supplier</th>
                   <th>Items</th>
                   <th>Total</th>
                   <th>Paid</th>
@@ -117,7 +113,6 @@ export default function PurchasesPage() {
                   return (
                     <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => setDetailId(p.id)}>
                       <td>{p.purchaseDate}</td>
-                      <td>{p.supplierName || '—'}</td>
                       <td>{p.itemCount}</td>
                       <td className="money">{formatMoney(p.totalPoisha)}</td>
                       <td className="money">{formatMoney(p.paidPoisha)}</td>
@@ -150,7 +145,6 @@ export default function PurchasesPage() {
       {creating && (
         <PurchaseForm
           ingredients={ingredients}
-          suppliers={suppliers}
           onClose={() => setCreating(false)}
           onSaved={() => {
             setCreating(false)
@@ -174,10 +168,9 @@ export default function PurchasesPage() {
 }
 
 /* ------------------------------------------------------------------ */
-function PurchaseForm({ ingredients, suppliers, onClose, onSaved }) {
+function PurchaseForm({ ingredients, onClose, onSaved }) {
   const [form, setForm] = useState({
     purchaseDate: todayStr(),
-    supplierId: '',
     paymentMethod: 'cash',
     initialPaid: '',
     invoiceNumber: '',
@@ -242,17 +235,6 @@ function PurchaseForm({ ingredients, suppliers, onClose, onSaved }) {
               value={form.purchaseDate}
               onChange={(e) => set('purchaseDate', e.target.value)}
             />
-          </div>
-          <div className="field">
-            <label className="field__label">Supplier</label>
-            <select className="field__control" value={form.supplierId} onChange={(e) => set('supplierId', e.target.value)}>
-              <option value="">— none —</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
           </div>
           <div className="field">
             <label className="field__label">Invoice number</label>
@@ -436,7 +418,7 @@ function PurchaseDetail({ id, onClose, onChanged }) {
   return (
     <Modal title={`Purchase — ${purchase.purchaseDate}`} onClose={onClose} wide>
       <div className="summary-line">
-        <span>Supplier</span>
+        <span>Items</span>
         <strong>{items.length} item{items.length === 1 ? '' : 's'}</strong>
       </div>
       {items.map((it) => (
