@@ -14,6 +14,7 @@ const NAV_SECTIONS = [
     label: 'Operations',
     items: [
       { to: '/inventory', label: 'Inventory', icon: 'box' },
+      { to: '/inventory/usage', label: 'Usage & Reconciliation', icon: 'chart' },
       { to: '/purchases', label: 'Purchases', icon: 'cart' },
       { to: '/recipes', label: 'Recipes', icon: 'book' },
       { to: '/calculator', label: 'Calculator', icon: 'calc' },

@@ -733,3 +733,78 @@ export const systemSettings = pgTable('system_settings', {
     .notNull()
     .defaultNow(),
 })
+
+/* ------------------------------------------------------------------ */
+/* MANUAL INVENTORY USAGE — stock used outside sales/production/waste  */
+/* (staff meals, samples, testing, etc.). Each record is linked to an  */
+/* immutable `manual_usage` inventory movement; nothing is hard-deleted.*/
+/* ------------------------------------------------------------------ */
+export const manualUsageRecords = pgTable(
+  'manual_usage_records',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    ingredientId: uuid('ingredient_id')
+      .notNull()
+      .references(() => ingredients.id, { onDelete: 'cascade' }),
+    quantityBase: integer('quantity_base').notNull(),
+    /** weighted-average cost per base unit at the time of usage (poisha) */
+    unitCostPoisha: integer('unit_cost_poisha').notNull().default(0),
+    /** staff_meal | sample | testing | personal | other */
+    reason: text('reason').notNull(),
+    notes: text('notes'),
+    /** confirmed | cancelled */
+    status: text('status').notNull().default('confirmed'),
+    /** the inventory_movements row that recorded the deduction */
+    movementId: uuid('movement_id'),
+    recordedBy: uuid('recorded_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    cancelledBy: uuid('cancelled_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('manual_usage_created_idx').on(table.createdAt),
+    index('manual_usage_ingredient_idx').on(table.ingredientId),
+  ],
+)
+
+/* ------------------------------------------------------------------ */
+/* STOCK RECONCILIATIONS — end-of-day physical counts.                 */
+/* Confirming a count creates an explicit `adjustment` movement for     */
+/* the difference (stock is never silently overwritten).               */
+/* ------------------------------------------------------------------ */
+export const stockReconciliations = pgTable(
+  'stock_reconciliations',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    reconciliationDate: date('reconciliation_date').notNull(),
+    ingredientId: uuid('ingredient_id')
+      .notNull()
+      .references(() => ingredients.id, { onDelete: 'cascade' }),
+    expectedBase: integer('expected_base').notNull(),
+    actualBase: integer('actual_base').notNull(),
+    /** actual - expected (positive = excess, negative = shortage) */
+    differenceBase: integer('difference_base').notNull(),
+    explanation: text('explanation'),
+    /** the adjustment movement created to align stock with the count */
+    adjustmentMovementId: uuid('adjustment_movement_id'),
+    confirmedBy: uuid('confirmed_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('stock_reconciliations_date_ingredient_unique').on(
+      table.reconciliationDate,
+      table.ingredientId,
+    ),
+    index('stock_reconciliations_date_idx').on(table.reconciliationDate),
+  ],
+)

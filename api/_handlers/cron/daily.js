@@ -13,7 +13,7 @@
  * or `x-cron-secret`. Without a configured secret the endpoint is open,
  * which is fine for local development but not recommended in production.
  */
-import { and, eq, isNotNull, lt, lte, gt } from 'drizzle-orm'
+import { and, eq, gt, gte, inArray, isNotNull, lt, lte, sql } from 'drizzle-orm'
 import { db, schema } from '../../../src/db/index.js'
 import { sendJson } from '../../_lib/http.js'
 import { getBusinessSettings } from '../../_lib/settings.js'
@@ -177,6 +177,102 @@ export default async function handler(req, res) {
       }
     })
 
+    /* ---------------- Unusual consumption (yesterday vs 30-day avg) -------- */
+    let consumptionAlertsCreated = 0
+    {
+      const now = new Date()
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const DAY = 24 * 60 * 60 * 1000
+      const yStart = new Date(todayStart.getTime() - DAY)
+      const tStart = new Date(todayStart.getTime() - 31 * DAY)
+      const types = [
+        'sale_consumption',
+        'sale_reversal',
+        'waste',
+        'waste_reversal',
+        'manual_usage',
+        'manual_usage_reversal',
+        'expiry',
+      ]
+      const aggregate = (start, end) =>
+        db
+          .select({
+            ingredientId: schema.ingredients.id,
+            name: schema.ingredients.name,
+            displayUnit: schema.ingredients.displayUnit,
+            qty: sql`COALESCE(SUM(-${schema.inventoryMovements.quantityDeltaBase}), 0)::int`,
+            cost: sql`COALESCE(SUM(-${schema.inventoryMovements.quantityDeltaBase} * COALESCE(${schema.inventoryMovements.unitCostPoisha}, 0)), 0)::bigint`,
+          })
+          .from(schema.inventoryMovements)
+          .innerJoin(
+            schema.ingredients,
+            eq(schema.inventoryMovements.ingredientId, schema.ingredients.id),
+          )
+          .where(
+            and(
+              inArray(schema.inventoryMovements.movementType, types),
+              gte(schema.inventoryMovements.createdAt, start),
+              lt(schema.inventoryMovements.createdAt, end),
+            ),
+          )
+          .groupBy(
+            schema.ingredients.id,
+            schema.ingredients.name,
+            schema.ingredients.displayUnit,
+          )
+
+      const [yRows, tRows] = await Promise.all([
+        aggregate(yStart, todayStart),
+        aggregate(tStart, yStart),
+      ])
+      const avgById = new Map(
+        tRows.map((r) => [
+          r.ingredientId,
+          { qty: (r.qty || 0) / 30, cost: Number(r.cost || 0) / 30 },
+        ]),
+      )
+      const yKey = `${yStart.getFullYear()}-${String(yStart.getMonth() + 1).padStart(
+        2,
+        '0',
+      )}-${String(yStart.getDate()).padStart(2, '0')}`
+
+      for (const r of yRows) {
+        const yQty = r.qty || 0
+        const yCost = Number(r.cost || 0)
+        const avg = avgById.get(r.ingredientId) || { qty: 0, cost: 0 }
+        if (avg.cost <= 0) continue
+        if (yCost >= 10000 && yQty > avg.qty * 2 && yCost > avg.cost * 2) {
+          const entityId = `consumption:${r.ingredientId}:${yKey}`
+          const existing = await db
+            .select({ id: schema.notifications.id })
+            .from(schema.notifications)
+            .where(
+              and(
+                eq(schema.notifications.type, 'consumption'),
+                eq(schema.notifications.entityId, entityId),
+                eq(schema.notifications.resolved, false),
+              ),
+            )
+            .limit(1)
+          if (existing.length === 0) {
+            const ratio = Math.round((yCost / avg.cost) * 10) / 10
+            await db.insert(schema.notifications).values({
+              type: 'consumption',
+              severity: 'warning',
+              title: 'UNUSUAL CONSUMPTION',
+              body: `${r.name}: ${formatQty(
+                yQty,
+                r.displayUnit,
+              )} used yesterday — about ${ratio}× its usual daily usage.`,
+              entityType: 'consumption',
+              entityId,
+            })
+            consumptionAlertsCreated += 1
+          }
+        }
+      }
+    }
+
     /* ---------------- Session housekeeping ---------------- */
     const deletedSessions = await db
       .delete(schema.sessions)
@@ -201,6 +297,7 @@ export default async function handler(req, res) {
       expiryAlertDays: alertDays,
       batchAlertsCreated,
       lowStockAlertsCreated,
+      consumptionAlertsCreated,
       resolvedAlerts,
       sessionsDeleted: deletedSessions.length,
     })

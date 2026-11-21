@@ -20,6 +20,8 @@ export const MOVEMENT_TYPES = {
   SALE_REVERSAL: 'sale_reversal',
   WASTE: 'waste',
   WASTE_REVERSAL: 'waste_reversal',
+  MANUAL_USAGE: 'manual_usage',
+  MANUAL_USAGE_REVERSAL: 'manual_usage_reversal',
   EXPIRY: 'expiry',
 }
 
