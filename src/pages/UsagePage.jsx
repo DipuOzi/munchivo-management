@@ -129,7 +129,7 @@ export default function UsagePage() {
   return (
     <>
       <div>
-        <h1>Inventory Usage &amp; Reconciliation</h1>
+        <h1 style={{ marginBottom: 12 }}>Inventory Usage &amp; Reconciliation</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
           Track what ingredients are consumed, record manual usage, and reconcile
           physical stock at the end of each day. All figures come from the stock ledger.

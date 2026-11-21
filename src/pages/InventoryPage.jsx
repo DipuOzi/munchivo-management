@@ -97,7 +97,7 @@ export default function InventoryPage() {
   return (
     <>
       <div>
-        <h1>Inventory</h1>
+        <h1 style={{ marginBottom: 12 }}>Inventory</h1>
         <p style={{ color: 'var(--muted)', marginTop: 6, fontSize: 14 }}>
           {rows.length} ingredient{rows.length === 1 ? '' : 's'} · Inventory value{' '}
           <strong className="money">{formatMoney(totals.value)}</strong>
